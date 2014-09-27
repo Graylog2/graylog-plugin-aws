@@ -1,4 +1,4 @@
-package com.graylog2.input.cloudtrail;
+package com.graylog2.input.cloudtrail.notifications;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -9,21 +9,21 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import com.google.common.collect.Lists;
+import com.graylog2.input.AWSInput;
+
+import java.util.List;
 
 /**
  * @author Lennart Koopmann <lennart@torch.sh>
  */
 public class CloudtrailSQSSubscriber {
 
-    // TODO
-    public static final String ACCESS_KEY = "AKIAIFFKDVDZOL2NXCCA";
-    public static final String SECRET_KEY = "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";
-
     private final AmazonSQS sqs;
     private final String queueName;
 
     public CloudtrailSQSSubscriber(String queueName) {
-        AWSCredentials credentials = new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY);
+        AWSCredentials credentials = new BasicAWSCredentials(AWSInput.ACCESS_KEY, AWSInput.SECRET_KEY);
 
         this.sqs = new AmazonSQSClient(credentials);
         this.sqs.setRegion(Region.getRegion(Regions.EU_WEST_1)); // TODO
@@ -32,17 +32,20 @@ public class CloudtrailSQSSubscriber {
     }
 
 
-    public void getMessages() {
-        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest(queueName));
+    public List<CloudtrailSNSNotification> getNotifications() {
+        List<CloudtrailSNSNotification> notifications = Lists.newArrayList();
 
-        int i = 0;
+        ReceiveMessageRequest request = new ReceiveMessageRequest(queueName);
+        request.setMaxNumberOfMessages(10);
+        ReceiveMessageResult result = sqs.receiveMessage(request);
+
+        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser();
+
         for (Message message : result.getMessages()) {
-            System.out.println("#" + i);
-            System.out.println("ID  : " + message.getMessageId());
-            System.out.println("BODY: " + message.getBody());
-            System.out.println("----------------");
-            i++;
+            notifications.addAll(parser.parse(message.getBody()));
         }
+
+        return notifications;
     }
 
 }

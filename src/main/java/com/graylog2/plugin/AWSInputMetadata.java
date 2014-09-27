@@ -4,7 +4,8 @@ import com.graylog2.input.InputVersion;
 import org.graylog2.plugin.PluginMetaData;
 import org.graylog2.plugin.Version;
 
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class AWSInputMetadata implements PluginMetaData {
 
@@ -29,10 +30,12 @@ public class AWSInputMetadata implements PluginMetaData {
     }
 
     @Override
-    public URL getURL() {
+    public URI getURL() {
         try {
-            return new URL("http", "graylog2.com", "/");
-        } catch (Exception ignored) { throw new RuntimeException("Malfored URL.", ignored); }
+            return new URI("http://www.graylog2.com/");
+        } catch (URISyntaxException ignored) {
+            throw new RuntimeException("Invalid plugin source URI.", ignored);
+        }
     }
 
     @Override
@@ -42,7 +45,7 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public String getDescription() {
-        return "Prototype plugin to read log data from Amazon Web Services.";
+        return "Prototype plugin to readCompressed log data from Amazon Web Services.";
     }
 
     @Override
