@@ -1,11 +1,10 @@
-package com.graylog2.input.cloudtrail.files;
+package com.graylog2.input.s3;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.S3Object;
 import com.graylog2.input.AWSInput;
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.graylog2.plugin.Tools;
 

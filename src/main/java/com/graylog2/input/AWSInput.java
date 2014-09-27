@@ -1,10 +1,14 @@
 package com.graylog2.input;
 
 import com.google.common.collect.Maps;
-import com.graylog2.input.cloudtrail.files.S3Reader;
+import com.graylog2.input.cloudtrail.messages.TreeReader;
+import com.graylog2.input.s3.S3Reader;
 import com.graylog2.input.cloudtrail.notifications.CloudtrailSNSNotification;
 import com.graylog2.input.cloudtrail.notifications.CloudtrailSQSSubscriber;
+import org.graylog2.plugin.Message;
 import org.graylog2.plugin.buffers.Buffer;
+import org.graylog2.plugin.buffers.BufferOutOfCapacityException;
+import org.graylog2.plugin.buffers.ProcessingDisabledException;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationException;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
@@ -15,6 +19,7 @@ import org.graylog2.plugin.inputs.MisfireException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 
 public class AWSInput extends MessageInput {
@@ -46,6 +51,8 @@ public class AWSInput extends MessageInput {
     public void launch(Buffer buffer) throws MisfireException {
         CloudtrailSQSSubscriber subscriber = new CloudtrailSQSSubscriber("cloudtrail-write");
 
+        TreeReader reader = new TreeReader();
+
         // TODO: use peridoc executor or shit
         while(!stopped) {
             System.out.println("checking for messages");
@@ -54,7 +61,23 @@ public class AWSInput extends MessageInput {
 
             for (CloudtrailSNSNotification n : subscriber.getNotifications()) {
                 try {
-                    System.out.println(S3Reader.readCompressed(n.getS3Bucket(), n.getS3ObjectKey()));
+                    List<Message> messages = reader.read(
+                            S3Reader.readCompressed(
+                                    n.getS3Bucket(),
+                                    n.getS3ObjectKey()
+                            )
+                    );
+
+                    for (Message message : messages) {
+                        try {
+                            buffer.insertFailFast(message, this);
+                            // TODO: delete from topic
+                        } catch(BufferOutOfCapacityException e) {
+                            LOG.debug("Buffer out of capacity. Processing CloudTrail message later.");
+                        } catch (ProcessingDisabledException e2) {
+                            LOG.debug("Message processing is disabled. Processing CloudTrail message later.");
+                        }
+                    }
                 } catch (Exception e) {
                     // TODO: what if the file just doesn't exist? separate between things that can be just skipped forever and stuff that needs to be retried.
                     LOG.error("Could not readCompressed CloudTrail log file for <{}>. Skipping.", n.getS3Bucket(), e);
