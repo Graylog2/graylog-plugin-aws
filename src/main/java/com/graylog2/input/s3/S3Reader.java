@@ -2,6 +2,8 @@ package com.graylog2.input.s3;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.S3Object;
 import com.graylog2.input.AWSInput;
@@ -23,9 +25,11 @@ public class S3Reader {
         this.secretKey = secretKey;
     }
 
-    public String readCompressed(String bucket, String key) throws IOException {
+    public String readCompressed(Region region, String bucket, String key) throws IOException {
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         AmazonS3Client c = new AmazonS3Client(credentials);
+        c.setRegion(region);
+
         S3Object o = c.getObject(bucket, key);
 
         if (o == null) {

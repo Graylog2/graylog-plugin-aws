@@ -1,5 +1,6 @@
 package com.graylog2.input;
 
+import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.google.common.collect.Maps;
 import org.graylog2.plugin.buffers.Buffer;
@@ -36,6 +37,8 @@ public class AWSInput extends MessageInput {
     @Override
     public void launch(Buffer buffer) throws MisfireException {
         subscriber = new CloudTrailSubscriber(
+                Region.getRegion(Regions.fromName(configuration.getString(CK_AWS_REGION))),
+                configuration.getString(CK_SQS_NAME),
                 buffer,
                 configuration.getString(CK_ACCESS_KEY),
                 configuration.getString(CK_SECRET_KEY),

@@ -3,7 +3,6 @@ package com.graylog2.input.cloudtrail.notifications;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.*;
@@ -24,11 +23,11 @@ public class CloudtrailSQSClient {
     private final AmazonSQS sqs;
     private final String queueName;
 
-    public CloudtrailSQSClient(String queueName, String accessKey, String secretKey) {
+    public CloudtrailSQSClient(Region region, String queueName, String accessKey, String secretKey) {
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         this.sqs = new AmazonSQSClient(credentials);
-        this.sqs.setRegion(Region.getRegion(Regions.EU_WEST_1)); // TODO
+        this.sqs.setRegion(region);
 
         this.queueName = queueName;
     }

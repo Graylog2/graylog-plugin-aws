@@ -1,5 +1,6 @@
 package com.graylog2.input;
 
+import com.amazonaws.regions.Region;
 import com.graylog2.input.cloudtrail.messages.TreeReader;
 import com.graylog2.input.cloudtrail.notifications.CloudtrailSNSNotification;
 import com.graylog2.input.cloudtrail.notifications.CloudtrailSQSClient;
@@ -25,11 +26,15 @@ public class CloudTrailSubscriber extends Thread {
 
     private final MessageInput sourceInput;
 
+    private final Region region;
+    private final String queueName;
     private final Buffer buffer;
     private final String accessKey;
     private final String secretKey;
 
-    public CloudTrailSubscriber(Buffer buffer, String accessKey, String secretKey, MessageInput sourceInput) {
+    public CloudTrailSubscriber(Region region, String queueName, Buffer buffer, String accessKey, String secretKey, MessageInput sourceInput) {
+        this.region = region;
+        this.queueName = queueName;
         this.buffer = buffer;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
@@ -39,7 +44,8 @@ public class CloudTrailSubscriber extends Thread {
     @Override
     public void run() {
         CloudtrailSQSClient subscriber = new CloudtrailSQSClient(
-                "cloudtrail-write",
+                region,
+                queueName,
                 accessKey,
                 secretKey
         );
@@ -67,6 +73,7 @@ public class CloudTrailSubscriber extends Thread {
 
                         List<Message> messages = reader.read(
                                 s3Reader.readCompressed(
+                                        region,
                                         n.getS3Bucket(),
                                         n.getS3ObjectKey()
                                 )
