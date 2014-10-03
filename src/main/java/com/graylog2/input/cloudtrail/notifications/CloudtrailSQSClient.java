@@ -17,15 +17,15 @@ import java.util.List;
 /**
  * @author Lennart Koopmann <lennart@torch.sh>
  */
-public class CloudtrailSQSSubscriber {
+public class CloudtrailSQSClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(AWSInput.class);
 
     private final AmazonSQS sqs;
     private final String queueName;
 
-    public CloudtrailSQSSubscriber(String queueName) {
-        AWSCredentials credentials = new BasicAWSCredentials(AWSInput.ACCESS_KEY, AWSInput.SECRET_KEY);
+    public CloudtrailSQSClient(String queueName, String accessKey, String secretKey) {
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         this.sqs = new AmazonSQSClient(credentials);
         this.sqs.setRegion(Region.getRegion(Regions.EU_WEST_1)); // TODO

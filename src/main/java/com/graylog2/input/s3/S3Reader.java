@@ -15,8 +15,16 @@ import java.io.IOException;
  */
 public class S3Reader {
 
-    public static String readCompressed(String bucket, String key) throws IOException {
-        AWSCredentials credentials = new BasicAWSCredentials(AWSInput.ACCESS_KEY, AWSInput.SECRET_KEY);
+    private final String accessKey;
+    private final String secretKey;
+
+    public S3Reader(String accessKey, String secretKey) {
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+    }
+
+    public String readCompressed(String bucket, String key) throws IOException {
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         AmazonS3Client c = new AmazonS3Client(credentials);
         S3Object o = c.getObject(bucket, key);
 
