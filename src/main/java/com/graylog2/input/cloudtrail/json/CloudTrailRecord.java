@@ -3,6 +3,7 @@ package com.graylog2.input.cloudtrail.json;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Maps;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -25,6 +26,7 @@ public class CloudTrailRecord {
     public String eventID;
     public String eventType;
     public String recipientAccountId;
+    public Map<String, Object> requestParameters;
 
     public Map<String, Object> additionalFieldsAsMap() {
         Map<String, Object> m = Maps.newHashMap();
@@ -44,6 +46,15 @@ public class CloudTrailRecord {
         }
 
         return m;
+    }
+
+    public String getFullMessage() {
+        if(requestParameters != null && !requestParameters.isEmpty()) {
+            // Le pretty print.
+            return Arrays.toString(requestParameters.entrySet().toArray());
+        }
+
+        return null;
     }
 
     public String getConstructedMessage() {

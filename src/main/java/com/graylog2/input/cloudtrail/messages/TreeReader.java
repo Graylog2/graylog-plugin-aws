@@ -33,6 +33,7 @@ public class TreeReader {
             );
 
             message.addFields(record.additionalFieldsAsMap());
+            message.addField("full_message", record.getFullMessage());
 
             messages.add(message);
         }
