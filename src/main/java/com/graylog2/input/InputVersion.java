@@ -26,7 +26,7 @@ import org.graylog2.plugin.Version;
  */
 public class InputVersion {
 
-    public static final Version PLUGIN_VERSION = new Version(0, 0, 1, "dev");
+    public static final Version PLUGIN_VERSION = new Version(0, 2, 0);
     public static final Version REQUIRED_VERSION = new Version(0, 90, 0);
 
 }

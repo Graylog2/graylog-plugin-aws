@@ -55,7 +55,13 @@ public class CloudTrailSubscriber extends Thread {
 
         while(!stopped) {
             while(!stopped) {
-                List<CloudtrailSNSNotification> notifications = subscriber.getNotifications();
+                List<CloudtrailSNSNotification> notifications;
+                try {
+                    notifications = subscriber.getNotifications();
+                }catch(Exception e) {
+                    LOG.error("Could not read messages from SNS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
+                    break;
+                }
 
                 /*
                  * Break out and wait a few seconds until next attempt to avoid hammering AWS with SQS
