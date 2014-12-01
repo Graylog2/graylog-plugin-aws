@@ -3,6 +3,7 @@ package com.graylog2.input.cloudtrail.json;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Maps;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -10,7 +11,7 @@ import java.util.Map;
  * @author Lennart Koopmann <lennart@torch.sh>
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CloudTrailRecord {
+public class CloudTrailRecord implements Serializable {
 
     public String eventVersion;
     public String eventTime;

@@ -5,9 +5,11 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.*;
+import com.amazonaws.services.sqs.model.DeleteMessageRequest;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.google.common.collect.Lists;
-import com.graylog2.input.AWSInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +20,7 @@ import java.util.List;
  */
 public class CloudtrailSQSClient {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AWSInput.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CloudtrailSQSClient.class);
 
     private final AmazonSQS sqs;
     private final String queueName;

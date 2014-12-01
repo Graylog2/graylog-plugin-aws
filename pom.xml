@@ -11,7 +11,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <graylog2.version>0.90.0</graylog2.version>
+        <graylog2.version>0.92.0</graylog2.version>
         <graylog2.plugin-dir>/Users/lennart/workspace/graylog2/graylog2-server/plugin</graylog2.plugin-dir>
         <surefire.version>2.17</surefire.version>
         <jackson.version>2.4.2</jackson.version>

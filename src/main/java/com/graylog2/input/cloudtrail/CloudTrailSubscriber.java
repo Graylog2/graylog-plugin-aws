@@ -1,17 +1,23 @@
-package com.graylog2.input;
+package com.graylog2.input.cloudtrail;
 
 import com.amazonaws.regions.Region;
+import com.eaio.uuid.UUID;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.util.concurrent.Uninterruptibles;
+import com.graylog2.input.cloudtrail.json.CloudTrailRecord;
 import com.graylog2.input.cloudtrail.messages.TreeReader;
 import com.graylog2.input.cloudtrail.notifications.CloudtrailSNSNotification;
 import com.graylog2.input.cloudtrail.notifications.CloudtrailSQSClient;
 import com.graylog2.input.s3.S3Reader;
-import org.graylog2.plugin.Message;
-import org.graylog2.plugin.buffers.Buffer;
 import org.graylog2.plugin.inputs.MessageInput;
+import org.graylog2.plugin.journal.RawMessage;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Lennart Koopmann <lennart@torch.sh>
@@ -22,23 +28,34 @@ public class CloudTrailSubscriber extends Thread {
 
     public static final int SLEEP_INTERVAL_SECS = 5;
 
-    private boolean stopped = false;
+    private volatile boolean stopped = false;
+    private volatile boolean paused = false;
+    private volatile CountDownLatch pausedLatch = new CountDownLatch(0);
 
     private final MessageInput sourceInput;
 
     private final Region region;
     private final String queueName;
-    private final Buffer buffer;
     private final String accessKey;
     private final String secretKey;
 
-    public CloudTrailSubscriber(Region region, String queueName, Buffer buffer, String accessKey, String secretKey, MessageInput sourceInput) {
+    public CloudTrailSubscriber(Region region, String queueName, MessageInput sourceInput, String accessKey, String secretKey) {
         this.region = region;
         this.queueName = queueName;
-        this.buffer = buffer;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.sourceInput = sourceInput;
+    }
+
+    public void pause() {
+        paused = true;
+        pausedLatch = new CountDownLatch(1);
+    }
+
+    // A ridiculous name because "resume" is already defined in the super class...
+    public void unpause() {
+        paused = false;
+        pausedLatch.countDown();
     }
 
     @Override
@@ -50,11 +67,20 @@ public class CloudTrailSubscriber extends Thread {
                 secretKey
         );
 
+        final ObjectMapper objectMapper = new ObjectMapper();
         TreeReader reader = new TreeReader();
         S3Reader s3Reader = new S3Reader(accessKey, secretKey);
 
         while(!stopped) {
             while(!stopped) {
+                if (paused) {
+                    LOG.debug("Processing paused");
+                    Uninterruptibles.awaitUninterruptibly(pausedLatch);
+                }
+                if (stopped) {
+                    break;
+                }
+
                 List<CloudtrailSNSNotification> notifications;
                 try {
                     notifications = subscriber.getNotifications();
@@ -77,7 +103,7 @@ public class CloudTrailSubscriber extends Thread {
                     try {
                         LOG.debug("Checking for CloudTrail notifications in SQS.");
 
-                        List<Message> messages = reader.read(
+                        List<CloudTrailRecord> records = reader.read(
                                 s3Reader.readCompressed(
                                         region,
                                         n.getS3Bucket(),
@@ -85,9 +111,9 @@ public class CloudTrailSubscriber extends Thread {
                                 )
                         );
 
-                        for (Message message : messages) {
+                        for (CloudTrailRecord record : records) {
                             /*
-                             * We are using insertCached and not insertFailFast here even though we are using a
+                             * We are using process and not processFailFast here even though we are using a
                              * queue system (SQS) that could just deliver the message again when we are out of
                              * internal Graylog2 capacity.
                              *
@@ -100,7 +126,20 @@ public class CloudTrailSubscriber extends Thread {
                              *
                              * lol computers.
                              */
-                            buffer.insertCached(message, sourceInput);
+
+                            if (LOG.isTraceEnabled()) {
+                                LOG.trace("Processing cloud trail record: {}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(record));
+                            }
+                            sourceInput.processRawMessage(new RawMessage(
+                                    Long.MIN_VALUE,
+                                    new UUID(),
+                                    DateTime.parse(record.eventTime),
+                                    sourceInput.getCodec().getName(),
+                                    sourceInput.getId(),
+                                    null,
+                                    null,
+                                    objectMapper.writeValueAsBytes(record)
+                            ));
                         }
 
                         // All messages written. Ack notification.
@@ -112,15 +151,17 @@ public class CloudTrailSubscriber extends Thread {
                 }
             }
 
-            try {
+            if (!stopped) {
                 LOG.debug("Waiting {} seconds until next CloudTrail SQS check.", SLEEP_INTERVAL_SECS);
-                Thread.sleep(SLEEP_INTERVAL_SECS * 1000);
-            } catch (InterruptedException ignored) {}
+                Uninterruptibles.sleepUninterruptibly(SLEEP_INTERVAL_SECS, TimeUnit.SECONDS);
+            }
         }
     }
 
     public void terminate() {
         stopped = true;
+        paused = false;
+        pausedLatch.countDown();
     }
 
 }
