@@ -1,7 +1,6 @@
 package com.graylog2.input.cloudtrail;
 
 import com.amazonaws.regions.Region;
-import com.eaio.uuid.UUID;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.graylog2.input.cloudtrail.json.CloudTrailRecord;
@@ -11,7 +10,6 @@ import com.graylog2.input.cloudtrail.notifications.CloudtrailSQSClient;
 import com.graylog2.input.s3.S3Reader;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.journal.RawMessage;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,11 +17,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author Lennart Koopmann <lennart@torch.sh>
- */
 public class CloudTrailSubscriber extends Thread {
-
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailSubscriber.class);
 
     public static final int SLEEP_INTERVAL_SECS = 5;
@@ -71,8 +65,8 @@ public class CloudTrailSubscriber extends Thread {
         TreeReader reader = new TreeReader();
         S3Reader s3Reader = new S3Reader(accessKey, secretKey);
 
-        while(!stopped) {
-            while(!stopped) {
+        while (!stopped) {
+            while (!stopped) {
                 if (paused) {
                     LOG.debug("Processing paused");
                     Uninterruptibles.awaitUninterruptibly(pausedLatch);
@@ -84,7 +78,7 @@ public class CloudTrailSubscriber extends Thread {
                 List<CloudtrailSNSNotification> notifications;
                 try {
                     notifications = subscriber.getNotifications();
-                }catch(Exception e) {
+                } catch (Exception e) {
                     LOG.error("Could not read messages from SNS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
                     break;
                 }
@@ -130,23 +124,14 @@ public class CloudTrailSubscriber extends Thread {
                             if (LOG.isTraceEnabled()) {
                                 LOG.trace("Processing cloud trail record: {}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(record));
                             }
-                            sourceInput.processRawMessage(new RawMessage(
-                                    Long.MIN_VALUE,
-                                    new UUID(),
-                                    DateTime.parse(record.eventTime),
-                                    sourceInput.getCodec().getName(),
-                                    sourceInput.getId(),
-                                    null,
-                                    null,
-                                    objectMapper.writeValueAsBytes(record)
-                            ));
+
+                            sourceInput.processRawMessage(new RawMessage(objectMapper.writeValueAsBytes(record)));
                         }
 
                         // All messages written. Ack notification.
                         subscriber.deleteNotification(n);
                     } catch (Exception e) {
                         LOG.error("Could not read CloudTrail log file for <{}>. Skipping.", n.getS3Bucket(), e);
-                        continue;
                     }
                 }
             }
@@ -163,5 +148,4 @@ public class CloudTrailSubscriber extends Thread {
         paused = false;
         pausedLatch.countDown();
     }
-
 }

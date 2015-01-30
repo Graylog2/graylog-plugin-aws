@@ -12,9 +12,6 @@ import org.graylog2.plugin.Tools;
 
 import java.io.IOException;
 
-/**
- * @author Lennart Koopmann <lennart@torch.sh>
- */
 public class S3Reader {
 
     private final String accessKey;

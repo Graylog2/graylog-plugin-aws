@@ -8,8 +8,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
-import org.graylog2.plugin.ConfigClass;
-import org.graylog2.plugin.FactoryClass;
+import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
@@ -18,6 +17,8 @@ import org.graylog2.plugin.configuration.fields.DropdownField;
 import org.graylog2.plugin.configuration.fields.TextField;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.inputs.MisfireException;
+import org.graylog2.plugin.inputs.annotations.ConfigClass;
+import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.graylog2.plugin.inputs.transports.ThrottleableTransport;
 import org.graylog2.plugin.inputs.transports.Transport;
@@ -29,22 +30,25 @@ import java.util.Map;
 
 public class CloudTrailTransport extends ThrottleableTransport {
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailTransport.class);
-    private final EventBus serverEventBus;
-    private final ServerStatus serverStatus;
-
-    private CloudTrailSubscriber subscriber;
 
     private static final String CK_AWS_REGION = "aws_region";
     private static final String CK_SQS_NAME = "aws_sqs_queue_name";
     private static final String CK_ACCESS_KEY = "aws_access_key";
     private static final String CK_SECRET_KEY = "aws_secret_key";
 
+    private final ServerStatus serverStatus;
+    private final LocalMetricRegistry localRegistry;
+
+    private CloudTrailSubscriber subscriber;
+
     @AssistedInject
     public CloudTrailTransport(@Assisted final Configuration configuration,
                                final EventBus serverEventBus,
-                               final ServerStatus serverStatus) {
-        this.serverEventBus = serverEventBus;
+                               final ServerStatus serverStatus,
+                               LocalMetricRegistry localRegistry) {
+        super(serverEventBus, configuration);
         this.serverStatus = serverStatus;
+        this.localRegistry = localRegistry;
     }
 
     @Override
@@ -72,15 +76,13 @@ public class CloudTrailTransport extends ThrottleableTransport {
     }
 
     @Override
-    public void launch(MessageInput input) throws MisfireException {
+    public void doLaunch(MessageInput input) throws MisfireException {
         serverStatus.awaitRunning(new Runnable() {
             @Override
             public void run() {
                 lifecycleStateChange(Lifecycle.RUNNING);
             }
         });
-
-        serverEventBus.register(this);
 
         LOG.info("Starting cloud trail subscriber");
 
@@ -96,7 +98,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     }
 
     @Override
-    public void stop() {
+    public void doStop() {
         LOG.info("Stopping cloud trail subscriber");
         if (subscriber != null) {
             subscriber.terminate();
@@ -105,7 +107,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
 
     @Override
     public MetricSet getMetricSet() {
-        return null; // TODO
+        return localRegistry;
     }
 
     @FactoryClass

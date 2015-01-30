@@ -1,22 +1,18 @@
 package com.graylog2.plugin;
 
-import com.graylog2.input.InputVersion;
 import org.graylog2.plugin.PluginMetaData;
+import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.Version;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.Set;
 
 public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public String getUniqueId() {
-        /*
-         * I have no idea what I'm doing. What is a
-         * "unique ID" in this context? using a UUID
-         * for now.
-         */
-        return "4c1d9e67-f481-4a92-a910-155116bd0fb5";
+        return AWSInputPlugin.class.getCanonicalName();
     }
 
     @Override
@@ -26,31 +22,31 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public String getAuthor() {
-        return "Lennart Koopmann";
+        return "Graylog Inc.";
     }
 
     @Override
     public URI getURL() {
-        try {
-            return new URI("http://www.graylog2.com/");
-        } catch (URISyntaxException ignored) {
-            throw new RuntimeException("Invalid plugin source URI.", ignored);
-        }
+        return URI.create("http://www.graylog.com/");
     }
 
     @Override
     public Version getVersion() {
-        return InputVersion.PLUGIN_VERSION;
+        return new Version(0, 4, 0);
     }
 
     @Override
     public String getDescription() {
-        return "Prototype plugin to readCompressed log data from Amazon Web Services.";
+        return "Prototype plugin to read compressed log data from Amazon Web Services.";
     }
 
     @Override
     public Version getRequiredVersion() {
-        return InputVersion.REQUIRED_VERSION;
+        return new Version(1, 0, 0);
     }
 
+    @Override
+    public Set<ServerStatus.Capability> getRequiredCapabilities() {
+        return Collections.emptySet();
+    }
 }
