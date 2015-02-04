@@ -17,17 +17,17 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public String getName() {
-        return "AWS services input";
+        return "AWS input";
     }
 
     @Override
     public String getAuthor() {
-        return "Graylog Inc.";
+        return "Graylog, Inc.";
     }
 
     @Override
     public URI getURL() {
-        return URI.create("http://www.graylog.com/");
+        return URI.create("https://www.graylog.com/");
     }
 
     @Override

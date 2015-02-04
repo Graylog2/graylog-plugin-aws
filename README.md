@@ -1,4 +1,3 @@
-Graylog2 Plugin -- AWSInput
-=====================================
+# Graylog Plugin -- AWS Input
 
-Welcome to your new Graylog2 plugin!
+Welcome to your new Graylog plugin!
