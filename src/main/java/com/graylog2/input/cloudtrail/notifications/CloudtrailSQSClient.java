@@ -15,11 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-/**
- * @author Lennart Koopmann <lennart@torch.sh>
- */
 public class CloudtrailSQSClient {
-
     private static final Logger LOG = LoggerFactory.getLogger(CloudtrailSQSClient.class);
 
     private final AmazonSQS sqs;

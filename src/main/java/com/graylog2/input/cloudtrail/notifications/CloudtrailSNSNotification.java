@@ -1,10 +1,6 @@
 package com.graylog2.input.cloudtrail.notifications;
 
-/**
- * @author Lennart Koopmann <lennart@torch.sh>
- */
 public class CloudtrailSNSNotification {
-
     private final String s3Bucket;
     private final String s3ObjectKey;
     private final String receiptHandle;

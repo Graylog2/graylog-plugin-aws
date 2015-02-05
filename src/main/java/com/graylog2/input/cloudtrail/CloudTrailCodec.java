@@ -32,7 +32,6 @@ public class CloudTrailCodec implements Codec {
         this.objectMapper = objectMapper;
     }
 
-
     @Nullable
     @Override
     public Message decode(@Nonnull RawMessage rawMessage) {
@@ -86,5 +85,4 @@ public class CloudTrailCodec implements Codec {
         public void overrideDefaultValues(@Nonnull ConfigurationRequest cr) {
         }
     }
-
 }

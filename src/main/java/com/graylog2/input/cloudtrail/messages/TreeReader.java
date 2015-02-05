@@ -8,11 +8,7 @@ import com.graylog2.input.cloudtrail.json.CloudTrailRecordList;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * @author Lennart Koopmann <lennart@torch.sh>
- */
 public class TreeReader {
-
     private final ObjectMapper om;
 
     public TreeReader() {

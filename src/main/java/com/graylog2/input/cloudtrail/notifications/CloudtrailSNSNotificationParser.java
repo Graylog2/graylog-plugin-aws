@@ -7,13 +7,10 @@ import com.graylog2.input.cloudtrail.json.CloudtrailWriteNotification;
 import com.graylog2.input.generic.json.SQSMessage;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
-/**
- * @author Lennart Koopmann <lennart@torch.sh>
- */
 public class CloudtrailSNSNotificationParser {
-
     private final ObjectMapper om;
 
     public CloudtrailSNSNotificationParser() {
@@ -27,7 +24,7 @@ public class CloudtrailSNSNotificationParser {
             SQSMessage envelope = om.readValue(message.getBody(), SQSMessage.class);
 
             if (envelope.message == null) {
-                return notifications;
+                return Collections.emptyList();
             }
 
             CloudtrailWriteNotification notification = om.readValue(envelope.message, CloudtrailWriteNotification.class);

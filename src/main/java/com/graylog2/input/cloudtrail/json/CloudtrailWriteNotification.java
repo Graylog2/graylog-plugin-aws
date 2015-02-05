@@ -1,13 +1,13 @@
 package com.graylog2.input.cloudtrail.json;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
-/**
- * @author Lennart Koopmann <lennart@torch.sh>
- */
 public class CloudtrailWriteNotification {
-
+    @JsonProperty("s3Bucket")
     public String s3Bucket;
+    @JsonProperty("s3ObjectKey")
     public List<String> s3ObjectKey;
 
 }

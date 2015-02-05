@@ -1,22 +1,26 @@
 package com.graylog2.input.cloudtrail.json;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
 
-/**
- * @author Lennart Koopmann <lennart@torch.sh>
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CloudTrailUserIdentity {
-
+    @JsonProperty("type")
     public String type;
+    @JsonProperty("principalId")
     public String principalId;
+    @JsonProperty("arn")
     public String arn;
+    @JsonProperty("accountId")
     public String accountId;
+    @JsonProperty("accessKeyId")
     public String accessKeyId;
+    @JsonProperty("userName")
     public String userName;
+    @JsonProperty("sessionContext")
     public CloudTrailSessionContext sessionContext;
 
     public Map<String, Object> additionalFieldsAsMap() {
