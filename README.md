@@ -5,7 +5,7 @@ This plugin provides an input plugin for AWS CloudTrail. It reads [CloudTrail](h
 
 **Required Graylog version:** 1.0 and later
 
-![Overview Screenshot](/images/plugin-aws-input-overview.png)
+![Overview Screenshot](https://github.com/Graylog2/graylog-plugin-aws/images/plugin-aws-input-overview.png)
 
 ## Installation
 
@@ -22,7 +22,7 @@ Restart `graylog-server` and you are done.
 
 Start by enabling CloudTrail for an AWS region:
 
-![Configuring CloudTrail](/images/plugin-aws-input-1.png)
+![Configuring CloudTrail](https://github.com/Graylog2/graylog-plugin-aws/images/plugin-aws-input-1.png)
 
 * **Create a new S3 bucket:** Yes
 * **S3 bucket:** Choose anything here, you do not need it for configuration of Graylog later
@@ -35,13 +35,13 @@ Start by enabling CloudTrail for an AWS region:
 
 Navigate to the AWS SQS service (in the same region as the just enabled CloudTrail) and hit **Create New Queue**.
 
-![Creating a SQS queue](/images/plugin-aws-input-2.png)
+![Creating a SQS queue](https://github.com/Graylog2/graylog-plugin-aws/images/plugin-aws-input-2.png)
 
 You can leave all settings on their default values for now but write down the **Queue Name** because you will need it for the Graylog configuration later. Our recommended default value is *cloudtrail-notifications*.
 
 CloudTrail will write notifications about log files it wrote to S3 to this queue and Graylog needs this information. Let’s subscribe the SQS queue to the CloudTrail SNS topic you created in the first step now:
 
-![Subscribing SQS queue to SNS topic](/images/plugin-aws-input-3.png)
+![Subscribing SQS queue to SNS topic](https://github.com/Graylog2/graylog-plugin-aws/images/plugin-aws-input-3.png)
 
 Right click on the new queue you just created and select *Subscribe Queue to SNS Topic*. Select the SNS topic that you configured in the first step when setting up CloudTrail. **Hit subscribe and you are all done with the AWS configuration.**
 
