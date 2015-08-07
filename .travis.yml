@@ -8,13 +8,14 @@ addons:
       - rpm
 before_deploy:
   - mvn jdeb:jdeb && export RELEASE_DEB_FILE=$(ls target/*.deb)
-  - mvn rpm:rpm && export RELEASE_RPM_FILE=$(ls target/rpm/graylog-input-aws/RPMS/noarch/graylog-input-aws-*.rpm)
-  - export RELEASE_PKG_FILE=$(ls target/graylog-input-aws-*.jar)
+  - mvn rpm:rpm && export RELEASE_RPM_FILE=$(find target/ -name '*.rpm' | tail -1)
+  - rm -f target/original-*.jar
+  - export RELEASE_PKG_FILE=$(ls target/*.jar)
   - echo "Deploying release to GitHub releases"
 deploy:
   provider: releases
   api_key:
-    secure: "LjGKvDU17hZNjjZG7iDkPpuwfEODec44Ed+cl7QRkvqzfDPS/dKERNBfIwxHDN8hPd0OLFzB6hBD5jprg2ypygg81h18autHNCm1mvAZ0FI4zh4H+3f/IZrrJXO4CkVbz37GyrFOeU6ktFyeClhsL0h9KK7d7C1EkQLe/6xnhi0deBporotf0TBHQ8rhJWtkhONP3gGaA5LLefpriF+G5MBY2vxJoLlO9kzSj4/G7tgP5nZwyhq4AWQ8hS7cNKoXFRb9Wn9yhQ8gbpEdP+M6RNQpLL+MaFFc9K0MPQoalOwq0NNj5arzqoowagmR4xTKkuYhHFR748At3HwXt1MxoodfQlKN8o82x8UVSdSppC5CpIbVdNgbn/oDCLRpRSvIgn+Al5o4kaPTe77PpHRCpsCcD4D2wpsy5aw4GT2MyNnt3m0oPgWUYx/n3sWq4yfxSUE+BQwTnr/6AD1I3NZCZmGiDNQO3Gpxry5pDjKd3mAQO402evRPkJpVYoq4XOMMyNzq7MIHGvt45e1tJMVUeT9Y+yISRP+VsYvdDbNfxS2q71QSUYMlby1SvJqzZbnk582KmhehlQ8SbSl5S2jMkx+iecqeH/NZw4VyQL7PHkbifdDkjLgqGXEvHZK/2ZXLzj/iy8EpLmTW+NxRnPPbM+7H5WrzsHacCgeKCsQGyac="
+    secure: "wTxthrNbMvcK9xNoJPpb2iZS0/WCcVge5psWhQg2dvu1Tw4CAti3sLF9CW+laJInXc+xxN4ApuQfjUx5Zzf8TK+1fxu6dgIdor3T09v9B+832PC7C9zJZ8txtDowMuqyV2V0ZXNJIxLGyLyxH+ipVfY3y+tZYHRGzSb9yHECg/mhNcn6bdyrwTk8wd+wkbVkSCLVcqycjlFK1xLbwM4+2qqO2rv1rycAzr9J1aaN7k90n1R2PU+IEGFtjpgF3si+1dzVQ3aFYlU+pFqVsTBHhXkzRhK2JAPipGtSYfjKwZ92Ca6EPlPrGKzN57q0LO7923qbtQxEx/BAjrF77U3GhHbIZ2SwgVvvyvvt45XGpAmj7VCY5SHwmGIpPyTFpQd8Wz01i5oFKpqu1x6b7s3Ugtm3YAlmCDqmt2qxyQum4ZljOxYQrsGXwSzsBVWMtcw4nj3J57HXLW4xw9jp7vlb33KvxkYMxHw5h+quSZnNLqVU6NF+25DkUp+LpaZDcPF34I3wMWh7LPAh4LqtNnQJXARvJPzebTXSRWeR1CUnuWYv8VN9Qg9a83Fei1F/Pp7IwR109xUAE2cCjyck66p4dHX3Y/Zp4XknPEaLduwoZZ7hLsTgDnlMO44wDlcbKG4giHmzikRsoF4Vn4kmlqRjuCGeKU09lzLtD/qPQxke3JA="
   file: 
     - "${RELEASE_PKG_FILE}"
     - "${RELEASE_DEB_FILE}"
