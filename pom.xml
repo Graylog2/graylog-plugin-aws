@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.graylog</groupId>
-    <artifactId>graylog-input-aws</artifactId>
+    <groupId>org.graylog.plugins</groupId>
+    <artifactId>graylog-plugin-aws</artifactId>
     <version>0.5.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -13,12 +13,20 @@
     <description>Graylog ${project.artifactId} plugin.</description>
     <url>https://www.graylog.org</url>
 
+    <scm>
+        <connection>scm:git:git@github.com:${graylog.plugin-repo-name}.git</connection>
+        <developerConnection>scm:git:git@github.com:${graylog.plugin-repo-name}.git</developerConnection>
+        <url>https://github.com/${graylog.plugin-repo-name}</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <graylog2.version>1.0.0</graylog2.version>
         <graylog2.plugin-dir>/usr/share/graylog-server/plugin</graylog2.plugin-dir>
+        <graylog.plugin-repo-name>Graylog2/graylog-plugin-aws</graylog.plugin-repo-name>
         <aws-java-sdk.version>1.9.20.1</aws-java-sdk.version>
     </properties>
 
@@ -81,6 +89,19 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.2</version>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <tagNameFormat>@{project.version}</tagNameFormat>
+                    <preparationGoals>clean test</preparationGoals>
+                    <goals>package</goals>
+                </configuration>
             </plugin>
 
             <plugin>

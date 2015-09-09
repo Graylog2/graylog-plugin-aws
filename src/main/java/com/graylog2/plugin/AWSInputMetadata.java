@@ -32,7 +32,7 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public Version getVersion() {
-        return new Version(0, 4, 0);
+        return new Version(0, 5, 0);
     }
 
     @Override
