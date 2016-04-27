@@ -17,7 +17,7 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public String getName() {
-        return "AWS input";
+        return "AWS CloudTrail input";
     }
 
     @Override
@@ -42,7 +42,7 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public Version getRequiredVersion() {
-        return new Version(1, 0, 0);
+        return new Version(2, 0, 0);
     }
 
     @Override

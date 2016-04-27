@@ -5,7 +5,7 @@ AWS CloudTrail Input Plugin For Graylog
 
 This plugin provides an input plugin for AWS CloudTrail. It reads [CloudTrail](http://aws.amazon.com/cloudtrail/) logs from your AWS account.
 
-**Required Graylog version:** 1.0 and later
+**Required Graylog version:** 2.0.0 and later
 
 ![Overview Screenshot](https://raw.githubusercontent.com/Graylog2/graylog-plugin-aws/master/images/plugin-aws-input-overview.png)
 
@@ -102,7 +102,7 @@ You should see CloudTrail messages coming in after launching the input. (Note th
 
 ## Build
 
-This project is using Maven and requires Java 7 or higher.
+This project is using Maven 3 and requires Java 8 or higher.
 
 You can build a plugin (JAR) with `mvn package`.
 
@@ -118,4 +118,4 @@ $ mvn release:prepare
 $ mvn release:perform
 ```
 
-This sets the version numbers, creates a tag and pushes to GitHub. TravisCI will build the release artifacts and upload to GitHub automatically.
+This sets the version numbers, creates a tag and pushes to GitHub. Travis CI will build the release artifacts and upload to GitHub automatically.
