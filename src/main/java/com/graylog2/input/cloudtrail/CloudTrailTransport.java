@@ -31,7 +31,8 @@ import java.util.Map;
 public class CloudTrailTransport extends ThrottleableTransport {
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailTransport.class);
 
-    private static final String CK_AWS_REGION = "aws_region";
+    private static final String CK_AWS_SQS_REGION = "aws_sqs_region";
+    private static final String CK_AWS_S3_REGION = "aws_s3_region";
     private static final String CK_SQS_NAME = "aws_sqs_queue_name";
     private static final String CK_ACCESS_KEY = "aws_access_key";
     private static final String CK_SECRET_KEY = "aws_secret_key";
@@ -87,7 +88,8 @@ public class CloudTrailTransport extends ThrottleableTransport {
         LOG.info("Starting cloud trail subscriber");
 
         subscriber = new CloudTrailSubscriber(
-                Region.getRegion(Regions.fromName(input.getConfiguration().getString(CK_AWS_REGION))),
+                Region.getRegion(Regions.fromName(input.getConfiguration().getString(CK_AWS_SQS_REGION))),
+                Region.getRegion(Regions.fromName(input.getConfiguration().getString(CK_AWS_S3_REGION))),
                 input.getConfiguration().getString(CK_SQS_NAME),
                 input,
                 input.getConfiguration().getString(CK_ACCESS_KEY),
@@ -131,12 +133,20 @@ public class CloudTrailTransport extends ThrottleableTransport {
             }
 
             r.addField(new DropdownField(
-                    CK_AWS_REGION,
-                    "AWS Region",
+                    CK_AWS_SQS_REGION,
+                    "AWS SQS Region",
                     Regions.US_EAST_1.getName(),
                     regions,
-                    "The AWS region to read CloudTrail for. The configured SQS queue " +
-                            "must also be located in this region.",
+                    "The AWS region the SQS queue is in.",
+                    ConfigurationField.Optional.NOT_OPTIONAL
+            ));
+
+            r.addField(new DropdownField(
+                    CK_AWS_S3_REGION,
+                    "AWS S3 Region",
+                    Regions.US_EAST_1.getName(),
+                    regions,
+                    "The AWS region the S3 bucket containing CloudTrail logs is in.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
 
