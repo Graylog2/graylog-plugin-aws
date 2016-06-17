@@ -1,5 +1,6 @@
 package com.graylog2.plugin;
 
+import com.google.common.collect.ImmutableSet;
 import org.graylog2.plugin.PluginMetaData;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.Version;
@@ -17,7 +18,7 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public String getName() {
-        return "AWS CloudTrail input";
+        return "AWS plugins";
     }
 
     @Override
@@ -32,12 +33,12 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public Version getVersion() {
-        return new Version(0, 5, 1);
+        return new Version(1, 0, 0);
     }
 
     @Override
     public String getDescription() {
-        return "Prototype plugin to read compressed log data from Amazon Web Services.";
+        return "Collection of plugins to read data from or interact with the Amazon Web Services (AWS).";
     }
 
     @Override
@@ -47,6 +48,13 @@ public class AWSInputMetadata implements PluginMetaData {
 
     @Override
     public Set<ServerStatus.Capability> getRequiredCapabilities() {
-        return Collections.emptySet();
+        return new ImmutableSet.Builder<ServerStatus.Capability>()
+                /*
+                 * This plugin will only start on the graylog-server master node because we are
+                 * mostly working with the AWS REST APIs and running on multiple graylog-server
+                 * nodes would result in data duplication.
+                 */
+                .add(ServerStatus.Capability.MASTER)
+                .build();
     }
 }
