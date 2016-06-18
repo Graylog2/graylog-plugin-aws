@@ -1,4 +1,4 @@
-package org.graylog.aws.inputs.generic.json;
+package org.graylog.aws.json;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -7,7 +7,7 @@ import org.graylog.aws.inputs.cloudtrail.json.CloudTrailRecord;
 import org.graylog.aws.inputs.cloudtrail.messages.TreeReader;
 import org.graylog.aws.inputs.cloudtrail.notifications.CloudtrailSNSNotification;
 import org.graylog.aws.inputs.cloudtrail.notifications.CloudtrailSQSClient;
-import org.graylog.aws.inputs.s3.S3Reader;
+import org.graylog.aws.s3.S3Reader;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.journal.RawMessage;
 import org.slf4j.Logger;

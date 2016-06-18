@@ -1,11 +1,9 @@
-package org.graylog.aws.inputs;
+package org.graylog.aws.inputs.cloudtrail;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
-import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
-import org.graylog.aws.inputs.cloudtrail.CloudTrailTransport;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.configuration.Configuration;

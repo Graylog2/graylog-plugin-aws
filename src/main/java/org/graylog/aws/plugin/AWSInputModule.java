@@ -1,6 +1,6 @@
 package org.graylog.aws.plugin;
 
-import org.graylog.aws.inputs.CloudTrailInput;
+import org.graylog.aws.inputs.cloudtrail.CloudTrailInput;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailTransport;
 import org.graylog2.plugin.PluginModule;

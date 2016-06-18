@@ -1,4 +1,4 @@
-package org.graylog.aws.inputs.s3;
+package org.graylog.aws.s3;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;

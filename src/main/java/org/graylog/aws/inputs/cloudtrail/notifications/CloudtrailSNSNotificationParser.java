@@ -4,7 +4,7 @@ import com.amazonaws.services.sqs.model.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import org.graylog.aws.inputs.cloudtrail.json.CloudtrailWriteNotification;
-import org.graylog.aws.inputs.generic.json.SQSMessage;
+import org.graylog.aws.json.SQSMessage;
 
 import java.io.IOException;
 import java.util.Collections;
