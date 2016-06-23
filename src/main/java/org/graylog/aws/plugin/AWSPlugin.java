@@ -7,14 +7,14 @@ import org.graylog2.plugin.PluginModule;
 import java.util.Collection;
 import java.util.Collections;
 
-public class AWSInputPlugin implements Plugin {
+public class AWSPlugin implements Plugin {
     @Override
     public Collection<PluginModule> modules() {
-        return Collections.<PluginModule>singleton(new AWSInputModule());
+        return Collections.<PluginModule>singleton(new AWSModule());
     }
 
     @Override
     public PluginMetaData metadata() {
-        return new AWSInputMetadata();
+        return new AWSPluginMetadata();
     }
 }

@@ -8,11 +8,11 @@ import org.graylog2.plugin.Version;
 import java.net.URI;
 import java.util.Set;
 
-public class AWSInputMetadata implements PluginMetaData {
+public class AWSPluginMetadata implements PluginMetaData {
 
     @Override
     public String getUniqueId() {
-        return AWSInputPlugin.class.getCanonicalName();
+        return AWSPlugin.class.getCanonicalName();
     }
 
     @Override

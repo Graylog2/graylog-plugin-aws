@@ -3,6 +3,7 @@ package org.graylog.aws.inputs.cloudtrail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
+import org.graylog.aws.AWS;
 import org.graylog.aws.inputs.cloudtrail.json.CloudTrailRecord;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
@@ -41,6 +42,7 @@ public class CloudTrailCodec implements Codec {
 
             message.addFields(record.additionalFieldsAsMap());
             message.addField("full_message", record.getFullMessage());
+            message.addField(AWS.SOURCE_GROUP_IDENTIFIER, true);
 
             return message;
         } catch (Exception e) {
