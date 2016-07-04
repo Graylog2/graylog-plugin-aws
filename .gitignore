@@ -7,3 +7,8 @@
 .settings/
 target/
 dependency-reduced-pom.xml
+pom.xml.releaseBackup
+out/
+node_modules
+node
+build

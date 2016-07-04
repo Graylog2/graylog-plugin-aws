@@ -5,6 +5,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.graylog.aws.AWS;
+import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.Messages;
 import org.graylog2.plugin.cluster.ClusterConfigService;
@@ -41,31 +42,34 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
     private final MetricRegistry metricRegistry;
     private final InstanceLookupTable table;
-    private final ClusterConfigService clusterConfigService;
+
+    private AWSPluginConfiguration config;
 
     @Inject
     public AWSInstanceNameLookupProcessor(ClusterConfigService clusterConfigService,
                                           MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
         this.table = InstanceLookupTable.getInstance();
-        this.clusterConfigService = clusterConfigService;
 
         Runnable refresh = new Runnable() {
             @Override
             public void run() {
                 try {
-                    // TODO read from configuration (needs config interface)
-                    /*AWSInstanceNameLookupConfig config = clusterConfigService.get(AWSInstanceNameLookupConfig.class);
+                    config = clusterConfigService.get(AWSPluginConfiguration.class);
 
                     if(config == null || !config.isComplete()) {
-                        LOG.warn("AWS instance name lookup processor is not fully configured. No lookups will happen.");
+                        LOG.warn("AWS plugin is not fully configured. No instance lookups will happen.");
                         return;
-                    }*/
+                    }
+
+                    if (!config.lookupsEnabled()) {
+                        LOG.debug("AWS instance name lookups are disabled.");
+                        return;
+                    }
 
                     LOG.debug("Refreshing AWS instance lookup table.");
 
-                    //table.reload(new BasicAWSCredentials(config.accessKey(), config.secretKey()));
-                    table.reload(new BasicAWSCredentials("KEY", "KEY"));
+                    table.reload(new BasicAWSCredentials(config.accessKey(), config.secretKey()));
                 } catch (Exception e) {
                     LOG.error("Could not refresh AWS instance lookup table.", e);
                 }
@@ -90,7 +94,7 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
     @Override
     public Messages process(Messages messages) {
-        if (!table.isLoaded()) {
+        if (config == null || !config.lookupsEnabled() || !table.isLoaded()) {
             return messages;
         }
 
