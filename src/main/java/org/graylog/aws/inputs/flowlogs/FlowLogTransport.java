@@ -41,7 +41,6 @@ public class FlowLogTransport implements Transport {
     private static final String CK_ACCESS_KEY = "aws_access_key";
     private static final String CK_SECRET_KEY = "aws_secret_key";
     private static final String CK_LOG_GROUP_NAME = "log_group_name";
-    private static final String CK_LOG_STREAM_NAME = "log_stream_name";
 
     private FlowLogReader reader;
     private AtomicBoolean paused;
@@ -88,7 +87,6 @@ public class FlowLogTransport implements Transport {
         reader = new FlowLogReader(
                 Region.getRegion(Regions.fromName(input.getConfiguration().getString(CK_AWS_REGION))),
                 input.getConfiguration().getString(CK_LOG_GROUP_NAME),
-                input.getConfiguration().getString(CK_LOG_STREAM_NAME),
                 input,
                 input.getConfiguration().getString(CK_ACCESS_KEY),
                 input.getConfiguration().getString(CK_SECRET_KEY),
@@ -101,7 +99,7 @@ public class FlowLogTransport implements Transport {
 
     @Override
     public void stop() {
-        // stop subscriber
+        // NEIN
     }
 
     @Subscribe
@@ -183,16 +181,7 @@ public class FlowLogTransport implements Transport {
                     CK_LOG_GROUP_NAME,
                     "Log group name",
                     "",
-                    "The CloudWatch log group name that the flow log is being written to",
-                    ConfigurationField.Optional.NOT_OPTIONAL
-            ));
-
-
-            r.addField(new TextField(
-                    CK_LOG_STREAM_NAME,
-                    "Log stream name",
-                    "",
-                    "The CloudWatch log stream name of the flow log",
+                    "The CloudWatch log group name that the flow logs are being written to. (Will read all flow log streams in this group)",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
 

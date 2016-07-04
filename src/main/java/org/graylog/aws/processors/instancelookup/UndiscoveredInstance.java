@@ -13,4 +13,15 @@ public class UndiscoveredInstance extends DiscoveredInstance {
         return name;
     }
 
+    @Override
+    public String getDescription() {
+        return null;
+    }
+
+    @Override
+    public String getAWSType() {
+        return null;
+    }
+
+
 }

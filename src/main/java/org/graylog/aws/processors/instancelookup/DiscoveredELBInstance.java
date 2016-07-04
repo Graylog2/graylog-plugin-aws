@@ -2,13 +2,13 @@ package org.graylog.aws.processors.instancelookup;
 
 import javax.annotation.Nullable;
 
-public class DiscoveredEC2Instance extends DiscoveredInstance {
+public class DiscoveredELBInstance extends DiscoveredInstance {
 
     private final String name;
     private final String description;
 
-    public DiscoveredEC2Instance(String instanceId, @Nullable String description) {
-        this.name = "ec2:" + instanceId;
+    public DiscoveredELBInstance(String instanceId, @Nullable String description) {
+        this.name = "elb:" + instanceId;
         this.description = description;
     }
 
@@ -24,7 +24,7 @@ public class DiscoveredEC2Instance extends DiscoveredInstance {
 
     @Override
     public String getAWSType() {
-        return "EC2";
+        return "ELB";
     }
 
 }

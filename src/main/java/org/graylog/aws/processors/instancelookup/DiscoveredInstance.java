@@ -6,4 +6,8 @@ public abstract class DiscoveredInstance {
 
     public abstract String getName();
 
+    public abstract String getDescription();
+
+    public abstract String getAWSType();
+
 }

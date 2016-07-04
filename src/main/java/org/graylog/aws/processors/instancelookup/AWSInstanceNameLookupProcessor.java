@@ -55,23 +55,22 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
             public void run() {
                 try {
                     // TODO read from configuration (needs config interface)
-                    AWSInstanceNameLookupConfig config = clusterConfigService.get(AWSInstanceNameLookupConfig.class);
+                    /*AWSInstanceNameLookupConfig config = clusterConfigService.get(AWSInstanceNameLookupConfig.class);
 
                     if(config == null || !config.isComplete()) {
                         LOG.warn("AWS instance name lookup processor is not fully configured. No lookups will happen.");
                         return;
-                    }
+                    }*/
 
                     LOG.debug("Refreshing AWS instance lookup table.");
 
-                    table.reload(new BasicAWSCredentials(config.accessKey(), config.secretKey()));
+                    //table.reload(new BasicAWSCredentials(config.accessKey(), config.secretKey()));
+                    table.reload(new BasicAWSCredentials("KEY", "KEY"));
                 } catch (Exception e) {
                     LOG.error("Could not refresh AWS instance lookup table.", e);
                 }
             }
         };
-
-        refresh.run();
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
@@ -104,6 +103,16 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
                     message.addField(
                             fieldName + "_entity",
                             table.findByIp(message.getField(fieldName).toString()).getName()
+                    );
+
+                    message.addField(
+                            fieldName + "_entity_description",
+                            table.findByIp(message.getField(fieldName).toString()).getDescription()
+                    );
+
+                    message.addField(
+                            fieldName + "_entity_aws_type",
+                            table.findByIp(message.getField(fieldName).toString()).getAWSType()
                     );
                 });
 

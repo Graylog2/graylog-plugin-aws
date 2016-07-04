@@ -31,8 +31,10 @@ public class FlowLogsInput extends MessageInput {
                 codec.create(configuration),
                 config,
                 descriptor,
-                serverStatus);
+                serverStatus
+        );
     }
+
     @FactoryClass
     public interface Factory extends MessageInput.Factory<FlowLogsInput> {
         @Override

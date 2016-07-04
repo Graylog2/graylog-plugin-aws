@@ -42,7 +42,6 @@ public class FlowLogCodec implements Codec {
     @Override
     public Message decode(@Nonnull RawMessage rawMessage) {
         try {
-            // TODO implement parsing
             String rawString = new String(rawMessage.getPayload());
             String[] parts = rawString.split(" ");
 
@@ -72,9 +71,9 @@ public class FlowLogCodec implements Codec {
                 .append(msg.getInterfaceId()).append(" ")
                 .append(msg.getAction()).append(" ")
                 .append(protocolNumbers.lookup(msg.getProtocolNumber())).append(" ")
-                .append(msg.getSourceAddress()).append(":")
+                .append(msg.getSourceAddress()).append(":").append(msg.getSourcePort())
                 .append(" -> ")
-                .append(msg.getDestinationAddress())
+                .append(msg.getDestinationAddress()).append(":").append(msg.getDestinationPort())
                 .toString();
     }
 
@@ -90,8 +89,6 @@ public class FlowLogCodec implements Codec {
             put("protocol", protocolNumbers.lookup(msg.getProtocolNumber()));
             put("packets", msg.getPackets());
             put("bytes", msg.getBytes());
-            put("capture_window_start", msg.getCaptureWindowStart());
-            put("capture_window_end", msg.getCaptureWindowEnd());
             put("capture_window_duration_seconds", Seconds.secondsBetween(msg.getCaptureWindowStart(), msg.getCaptureWindowEnd()).getSeconds());
             put("action", msg.getAction());
             put("log_status", msg.getLogStatus());
