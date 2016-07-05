@@ -28,13 +28,15 @@ public class CloudTrailSubscriber extends Thread {
 
     private final MessageInput sourceInput;
 
-    private final Region region;
+    private final Region sqsRegion;
+    private final Region s3Region;
     private final String queueName;
     private final String accessKey;
     private final String secretKey;
 
-    public CloudTrailSubscriber(Region region, String queueName, MessageInput sourceInput, String accessKey, String secretKey) {
-        this.region = region;
+    public CloudTrailSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput, String accessKey, String secretKey) {
+        this.sqsRegion = sqsRegion;
+        this.s3Region = s3Region;
         this.queueName = queueName;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
@@ -55,7 +57,7 @@ public class CloudTrailSubscriber extends Thread {
     @Override
     public void run() {
         CloudtrailSQSClient subscriber = new CloudtrailSQSClient(
-                region,
+                sqsRegion,
                 queueName,
                 accessKey,
                 secretKey
@@ -99,7 +101,7 @@ public class CloudTrailSubscriber extends Thread {
 
                         List<CloudTrailRecord> records = reader.read(
                                 s3Reader.readCompressed(
-                                        region,
+                                        s3Region,
                                         n.getS3Bucket(),
                                         n.getS3ObjectKey()
                                 )
