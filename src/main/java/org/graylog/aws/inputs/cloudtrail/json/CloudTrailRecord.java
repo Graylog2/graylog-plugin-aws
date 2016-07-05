@@ -18,6 +18,11 @@ public class CloudTrailRecord implements Serializable {
     @JsonProperty("userIdentity")
     public CloudTrailUserIdentity userIdentity;
 
+    //adding reponseElements
+    @JsonProperty("responseElements")
+    public CloudTrailResponseElements responseElements;
+
+
     @JsonProperty("eventSource")
     public String eventSource;
     @JsonProperty("eventName")
@@ -36,6 +41,11 @@ public class CloudTrailRecord implements Serializable {
     public String eventType;
     @JsonProperty("recipientAccountId")
     public String recipientAccountId;
+ 
+    //adding errorMessage 
+    @JsonProperty("errorMessage")
+    public String errorMessage; 
+ 
     @JsonProperty("requestParameters")
     public Map<String, Object> requestParameters;
 
@@ -51,10 +61,21 @@ public class CloudTrailRecord implements Serializable {
         m.put("event_id", eventID);
         m.put("event_type", eventType);
         m.put("recipient_account_id", recipientAccountId);
-
-        if (userIdentity != null) {
+     
+        //adding errorMessage if present
+        if (errorMessage != null) {
+           m.put("errorMessage", errorMessage);
+        }
+      
+       if (userIdentity != null) {
             m.putAll(userIdentity.additionalFieldsAsMap());
         }
+
+        //adding responseElements if present
+        if (responseElements != null) {
+            m.putAll(responseElements.additionalFieldsAsMap());
+        }
+
 
         return m;
     }
