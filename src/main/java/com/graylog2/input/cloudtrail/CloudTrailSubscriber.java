@@ -8,6 +8,7 @@ import com.graylog2.input.cloudtrail.messages.TreeReader;
 import com.graylog2.input.cloudtrail.notifications.CloudtrailSNSNotification;
 import com.graylog2.input.cloudtrail.notifications.CloudtrailSQSClient;
 import com.graylog2.input.s3.S3Reader;
+import okhttp3.HttpUrl;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.journal.RawMessage;
 import org.slf4j.Logger;
@@ -33,14 +34,17 @@ public class CloudTrailSubscriber extends Thread {
     private final String queueName;
     private final String accessKey;
     private final String secretKey;
+    private final HttpUrl proxyUrl;
 
-    public CloudTrailSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput, String accessKey, String secretKey) {
+    public CloudTrailSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput,
+                                String accessKey, String secretKey, HttpUrl proxyUrl) {
         this.sqsRegion = sqsRegion;
         this.s3Region = s3Region;
         this.queueName = queueName;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.sourceInput = sourceInput;
+        this.proxyUrl = proxyUrl;
     }
 
     public void pause() {
@@ -60,7 +64,8 @@ public class CloudTrailSubscriber extends Thread {
                 sqsRegion,
                 queueName,
                 accessKey,
-                secretKey
+                secretKey,
+                proxyUrl
         );
 
         final ObjectMapper objectMapper = new ObjectMapper();

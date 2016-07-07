@@ -7,10 +7,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
+import okhttp3.HttpUrl;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
+import org.graylog2.plugin.configuration.fields.BooleanField;
 import org.graylog2.plugin.configuration.fields.ConfigurationField;
 import org.graylog2.plugin.configuration.fields.DropdownField;
 import org.graylog2.plugin.configuration.fields.TextField;
@@ -25,6 +27,8 @@ import org.graylog2.plugin.lifecycles.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Named;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,10 +42,12 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private static final String CK_SQS_NAME = "aws_sqs_queue_name";
     private static final String CK_ACCESS_KEY = "aws_access_key";
     private static final String CK_SECRET_KEY = "aws_secret_key";
+    private static final String CK_USE_PROXY = "use_proxy";
 
     private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
 
     private final ServerStatus serverStatus;
+    private final URI httpProxyUri;
     private final LocalMetricRegistry localRegistry;
 
     private CloudTrailSubscriber subscriber;
@@ -50,9 +56,11 @@ public class CloudTrailTransport extends ThrottleableTransport {
     public CloudTrailTransport(@Assisted final Configuration configuration,
                                final EventBus serverEventBus,
                                final ServerStatus serverStatus,
+                               @Named("http_proxy_uri") URI httpProxyUri,
                                LocalMetricRegistry localRegistry) {
         super(serverEventBus, configuration);
         this.serverStatus = serverStatus;
+        this.httpProxyUri = httpProxyUri;
         this.localRegistry = localRegistry;
     }
 
@@ -90,13 +98,16 @@ public class CloudTrailTransport extends ThrottleableTransport {
         final String sqsRegionName = input.getConfiguration().getString(CK_AWS_SQS_REGION, legacyRegionName);
         final String s3RegionName = input.getConfiguration().getString(CK_AWS_S3_REGION, legacyRegionName);
 
+        final HttpUrl proxyUrl = input.getConfiguration().getBoolean(CK_USE_PROXY, false) ? HttpUrl.get(httpProxyUri) : null;
+
         subscriber = new CloudTrailSubscriber(
                 Region.getRegion(Regions.fromName(sqsRegionName)),
                 Region.getRegion(Regions.fromName(s3RegionName)),
                 input.getConfiguration().getString(CK_SQS_NAME),
                 input,
                 input.getConfiguration().getString(CK_ACCESS_KEY),
-                input.getConfiguration().getString(CK_SECRET_KEY)
+                input.getConfiguration().getString(CK_SECRET_KEY),
+                proxyUrl
         );
 
         subscriber.start();
@@ -176,6 +187,13 @@ public class CloudTrailTransport extends ThrottleableTransport {
                     "Secret key of an AWS user with sufficient permissions. (See documentation)",
                     ConfigurationField.Optional.NOT_OPTIONAL,
                     TextField.Attribute.IS_PASSWORD
+            ));
+
+            r.addField(new BooleanField(
+                    CK_USE_PROXY,
+                    "Use proxy server",
+                    false,
+                    "Use proxy server (see 'http_proxy_uri' in the Graylog configuration) for accessing the AWS API."
             ));
 
             return r;

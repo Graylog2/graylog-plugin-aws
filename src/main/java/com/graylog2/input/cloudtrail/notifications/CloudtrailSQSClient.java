@@ -1,5 +1,7 @@
 package com.graylog2.input.cloudtrail.notifications;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.ClientConfigurationFactory;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
@@ -10,6 +12,7 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.google.common.collect.Lists;
+import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,15 +24,25 @@ public class CloudtrailSQSClient {
     private final AmazonSQS sqs;
     private final String queueName;
 
-    public CloudtrailSQSClient(Region region, String queueName, String accessKey, String secretKey) {
-        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+    public CloudtrailSQSClient(Region region, String queueName, String accessKey, String secretKey, HttpUrl proxyUrl) {
+        final AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
-        this.sqs = new AmazonSQSClient(credentials);
+        if(proxyUrl != null) {
+            final ClientConfiguration clientConfiguration = new ClientConfigurationFactory().getConfig()
+                    .withProxyHost(proxyUrl.host())
+                    .withProxyPort(proxyUrl.port())
+                    .withProxyUsername(proxyUrl.username())
+                    .withProxyPassword(proxyUrl.password());
+
+            this.sqs = new AmazonSQSClient(credentials, clientConfiguration);
+        } else {
+            this.sqs = new AmazonSQSClient(credentials);
+        }
+
         this.sqs.setRegion(region);
 
         this.queueName = queueName;
     }
-
 
     public List<CloudtrailSNSNotification> getNotifications() {
         LOG.debug("Fetching SQS CloudTrail notifications.");
