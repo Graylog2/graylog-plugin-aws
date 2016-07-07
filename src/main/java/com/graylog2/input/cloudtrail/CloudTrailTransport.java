@@ -27,6 +27,7 @@ import org.graylog2.plugin.lifecycles.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Named;
 import java.net.URI;
 import java.util.Arrays;
@@ -56,7 +57,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     public CloudTrailTransport(@Assisted final Configuration configuration,
                                final EventBus serverEventBus,
                                final ServerStatus serverStatus,
-                               @Named("http_proxy_uri") URI httpProxyUri,
+                               @Named("http_proxy_uri") @Nullable URI httpProxyUri,
                                LocalMetricRegistry localRegistry) {
         super(serverEventBus, configuration);
         this.serverStatus = serverStatus;
