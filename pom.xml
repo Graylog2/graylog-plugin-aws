@@ -7,7 +7,7 @@
 
     <groupId>org.graylog.plugins</groupId>
     <artifactId>graylog-plugin-aws</artifactId>
-    <version>0.5.1-SNAPSHOT</version>
+    <version>0.6.0</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -18,7 +18,7 @@
         <connection>scm:git:git@github.com:${graylog.plugin-repo-name}.git</connection>
         <developerConnection>scm:git:git@github.com:${graylog.plugin-repo-name}.git</developerConnection>
         <url>https://github.com/${graylog.plugin-repo-name}</url>
-        <tag>HEAD</tag>
+        <tag>0.6.0</tag>
     </scm>
 
     <properties>
