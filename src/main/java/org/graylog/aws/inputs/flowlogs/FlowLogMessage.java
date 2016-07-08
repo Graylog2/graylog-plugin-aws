@@ -1,8 +1,11 @@
 package org.graylog.aws.inputs.flowlogs;
 
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FlowLogMessage {
+    private static final Logger LOG = LoggerFactory.getLogger(FlowLogMessage.class);
 
     private final DateTime timestamp;
     private final int version;
@@ -58,21 +61,47 @@ public class FlowLogMessage {
         }
         return new FlowLogMessage(
                 new DateTime(Long.valueOf(parts[0])),
-                Integer.valueOf(parts[1]),
+                safeInteger(parts[1]),
                 parts[2],
                 parts[3],
                 parts[4],
                 parts[5],
-                Integer.valueOf(parts[6]),
-                Integer.valueOf(parts[7]),
-                Integer.valueOf(parts[8]),
-                Long.valueOf(parts[9]),
-                Long.valueOf(parts[10]),
+                safeInteger(parts[6]),
+                safeInteger(parts[7]),
+                safeInteger(parts[8]),
+                safeLong(parts[9]),
+                safeLong(parts[10]),
                 new DateTime(Long.valueOf(parts[11])*1000),
                 new DateTime(Long.valueOf(parts[12])*1000),
                 parts[13],
                 parts[14]
         );
+    }
+
+    private static int safeInteger(String x) {
+        if("-".equals(x)) {
+            return 0;
+        }
+
+        try {
+            return Integer.valueOf(x);
+        } catch(Exception e) {
+            LOG.debug("Could not parse value of FlowLog message to Integer.", e);
+            return 0;
+        }
+    }
+
+    private static long safeLong(String x) {
+        if("-".equals(x)) {
+            return 0L;
+        }
+
+        try {
+            return Long.valueOf(x);
+        } catch(Exception e) {
+            LOG.debug("Could not parse value of FlowLog message to Long.", e);
+            return 0L;
+        }
     }
 
     public DateTime getTimestamp() {
