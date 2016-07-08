@@ -14,6 +14,7 @@ const AWSPluginConfiguration = React.createClass({
         return {
             config: {
                 lookups_enabled: false,
+                lookup_regions: 'us-east-1,us-west-1,us-west-2,eu-west-1,eu-central-1',
                 access_key: '',
                 secret_key: '',
             },
@@ -87,6 +88,10 @@ const AWSPluginConfiguration = React.createClass({
                 <dl className="deflist">
                     <dt>Instance detail lookups:</dt>
                     <dd>{this.state.config.lookups_enabled === true ? 'Enabled' : 'Disabled'}</dd>
+
+                    <dt>Lookup regions:</dt>
+                    <dd>{this.state.config.lookup_regions ? this.state.config.lookup_regions : "[not set]" }</dd>
+
                     <dt>Access Key:</dt>
                     <dd>{this.state.config.access_key ? "***********" : "[not set]" }</dd>
 
@@ -107,24 +112,31 @@ const AWSPluginConfiguration = React.createClass({
                         <Input type="checkbox"
                                ref="lookupsEnabled"
                                label="Run AWS instance detail lookups for IP addresses?"
-                               help={<span>It can take up to a minute for a change of this to take effect.</span>}
+                               help={<span>When enabled, a message processor will try to identify IP addresses of your AWS entities (like EC2, ELB, RDS, ...) and add additional information abut the service or instance behind it. It can take up to a minute for a change of this to take effect.</span>}
                                name="lookups_enabled"
                                checked={this.state.config.lookups_enabled}
                                onChange={this._onCheckboxClick('lookups_enabled', 'lookupsEnabled')}/>
 
                         <Input type="text"
                                label="AWS Access Key"
-                               help={<span>Note that this will only be used in encrypted connections but stored in plaintext.</span>}
+                               help={<span>Note that this will only be used in encrypted connections but stored in plaintext. Please consult the documentation for suggested rights to assign to the underlying IAM user.</span>}
                                name="access_key"
                                value={this.state.config.access_key}
                                onChange={this._onUpdate('access_key')}/>
 
                         <Input type="text"
                                label="AWS Secret Key"
-                               help={<span>Note that this will only be used in encrypted connections but stored in plaintext.</span>}
+                               help={<span>Note that this will only be used in encrypted connections but stored in plaintext. Please consult the documentation for suggested rights to assign to the underlying IAM user.</span>}
                                name="secret_key"
                                value={this.state.config.secret_key}
                                onChange={this._onUpdate('secret_key')}/>
+
+                        <Input type="text"
+                               label="Lookup regions"
+                               help={<span>The AWS instance lookup message processor keeps a table of instances for fast address translation. Define the AWS regions you want to include in the tables. This should be all regions you run AWS services in. Remember that your IAM user needs permission for these regions or you will see warnings in your graylog-server log files.</span>}
+                               name="lookup_regions"
+                               value={this.state.config.lookup_regions}
+                               onChange={this._onUpdate('lookup_regions')}/>
                     </fieldset>
                 </BootstrapModalForm>
             </div>

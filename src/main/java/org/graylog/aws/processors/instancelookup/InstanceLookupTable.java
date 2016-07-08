@@ -16,6 +16,8 @@ import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 public class InstanceLookupTable {
     private static final Logger LOG = LoggerFactory.getLogger(InstanceLookupTable.class);
 
@@ -41,14 +43,13 @@ public class InstanceLookupTable {
 
     private InstanceLookupTable() { /* nope */ }
 
-    public void reload(AWSCredentials credentials) {
+    public void reload(List<Regions> regions, AWSCredentials credentials) {
         LOG.info("Reloading AWS instance lookup table.");
 
         ImmutableMap.Builder<String, Instance> ec2InstancesBuilder = ImmutableMap.<String, Instance>builder();
         ImmutableMap.Builder<String, NetworkInterface> networkInterfacesBuilder = ImmutableMap.<String, NetworkInterface>builder();
 
-        // TODO MAKE REGIONS CONFIGURABLE
-        for (Regions region : Regions.values()) {
+        for (Regions region : regions) {
             try {
                 AmazonEC2Client ec2Client = new AmazonEC2Client(credentials);
                 ec2Client.configureRegion(region);

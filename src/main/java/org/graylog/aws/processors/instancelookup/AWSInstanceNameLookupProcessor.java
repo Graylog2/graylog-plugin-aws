@@ -69,7 +69,7 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
                     LOG.debug("Refreshing AWS instance lookup table.");
 
-                    table.reload(new BasicAWSCredentials(config.accessKey(), config.secretKey()));
+                    table.reload(config.getLookupRegions(), new BasicAWSCredentials(config.accessKey(), config.secretKey()));
                 } catch (Exception e) {
                     LOG.error("Could not refresh AWS instance lookup table.", e);
                 }
