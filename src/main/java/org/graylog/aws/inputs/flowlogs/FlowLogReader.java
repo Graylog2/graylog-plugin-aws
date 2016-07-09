@@ -50,74 +50,79 @@ public class FlowLogReader implements Runnable {
             return;
         }
 
-        LOG.debug("Starting.");
+        try {
 
-        // TODO make offset configurable.
-        DateTime thisRunSecond = DateTime.now(DateTimeZone.UTC).withMillisOfSecond(0).minusMinutes(15);
+            LOG.debug("Starting.");
 
-        // TODO fock fock what if the runs takes longer than 15 sec? this srsly needs a lastCall thingy
-        if(lastRun == null) {
-            lastRun = thisRunSecond.minusSeconds(15);
-        }
+            // TODO make offset configurable.
+            DateTime thisRunSecond = DateTime.now(DateTimeZone.UTC).withMillisOfSecond(0).minusMinutes(15);
 
-        // TODO metrics
-
-        AWSLogsClient client = new AWSLogsClient(new BasicAWSCredentials(accessKey, secretKey));
-        client.setRegion(region);
-
-        // Get all flow log streams in this group. (TODO: support stream selection by prefix?)
-        ImmutableList.Builder<LogStream> streamsBuilder = ImmutableList.<LogStream>builder();
-        String nextToken = null;
-        while(true) {
-            DescribeLogStreamsRequest req = new DescribeLogStreamsRequest(groupName);
-
-            if(nextToken != null) {
-                // Subsequent page call.
-                req.withNextToken(nextToken);
+            // TODO fock fock what if the runs takes longer than 15 sec? this srsly needs a lastCall thingy
+            if (lastRun == null) {
+                lastRun = thisRunSecond.minusSeconds(15);
             }
 
-            DescribeLogStreamsResult streamsPage = client.describeLogStreams(req);
+            // TODO metrics
 
-            // Add page to full result list.
-            streamsBuilder.addAll(streamsPage.getLogStreams());
+            AWSLogsClient client = new AWSLogsClient(new BasicAWSCredentials(accessKey, secretKey));
+            client.setRegion(region);
 
-            nextToken = streamsPage.getNextToken();
-            if(nextToken == null) {
-                // Done with cycling through pages. We have all results.
-                break;
-            }
-        }
+            // Get all flow log streams in this group. (TODO: support stream selection by prefix?)
+            ImmutableList.Builder<LogStream> streamsBuilder = ImmutableList.<LogStream>builder();
+            String nextToken = null;
+            while (true) {
+                DescribeLogStreamsRequest req = new DescribeLogStreamsRequest(groupName);
 
-        ImmutableList<LogStream> streams = streamsBuilder.build();
-
-        for (LogStream stream : streams) {
-            LOG.debug("Reading FlowLogs [{}] from [{}] to [{}].", buildFlowLogName(stream.getLogStreamName()), lastRun, thisRunSecond);
-
-            try {
-                GetLogEventsRequest req = new GetLogEventsRequest()
-                        .withLogGroupName(groupName)
-                        .withLogStreamName(stream.getLogStreamName())
-                        .withStartTime(lastRun.getMillis())
-                        .withEndTime(thisRunSecond.getMillis())
-                        .withLimit(10_000)
-                        .withStartFromHead(true);
-
-                LOG.debug("Fetching logs of stream [{}] with following request parameters: {}", buildFlowLogName(stream.getLogStreamName()), req.toString());
-
-                GetLogEventsResult logs = client.getLogEvents(req);
-
-                // Iterate over all logs.
-                for (OutputLogEvent log : logs.getEvents()) {
-                    String message = new StringBuilder(log.getTimestamp().toString()).append(" ").append(log.getMessage()).toString();
-                    sourceInput.processRawMessage(new RawMessage(message.getBytes()));
+                if (nextToken != null) {
+                    // Subsequent page call.
+                    req.withNextToken(nextToken);
                 }
-            } catch (Exception e) {
-                LOG.error("Could not read AWS FlowLogs.", e);
-            }
-        }
 
-        // TODO persist in tmp sfile
-        this.lastRun = thisRunSecond;
+                DescribeLogStreamsResult streamsPage = client.describeLogStreams(req);
+
+                // Add page to full result list.
+                streamsBuilder.addAll(streamsPage.getLogStreams());
+
+                nextToken = streamsPage.getNextToken();
+                if (nextToken == null) {
+                    // Done with cycling through pages. We have all results.
+                    break;
+                }
+            }
+
+            ImmutableList<LogStream> streams = streamsBuilder.build();
+
+            for (LogStream stream : streams) {
+                LOG.debug("Reading FlowLogs [{}] from [{}] to [{}].", buildFlowLogName(stream.getLogStreamName()), lastRun, thisRunSecond);
+
+                try {
+                    GetLogEventsRequest req = new GetLogEventsRequest()
+                            .withLogGroupName(groupName)
+                            .withLogStreamName(stream.getLogStreamName())
+                            .withStartTime(lastRun.getMillis())
+                            .withEndTime(thisRunSecond.getMillis())
+                            .withLimit(10_000)
+                            .withStartFromHead(true);
+
+                    LOG.debug("Fetching logs of stream [{}] with following request parameters: {}", buildFlowLogName(stream.getLogStreamName()), req.toString());
+
+                    GetLogEventsResult logs = client.getLogEvents(req);
+
+                    // Iterate over all logs.
+                    for (OutputLogEvent log : logs.getEvents()) {
+                        String message = new StringBuilder(log.getTimestamp().toString()).append(" ").append(log.getMessage()).toString();
+                        sourceInput.processRawMessage(new RawMessage(message.getBytes()));
+                    }
+                } catch (Exception e) {
+                    LOG.error("Could not read AWS FlowLogs from stream [{}].", stream.getLogStreamName(), e);
+                }
+            }
+
+            // TODO persist in tmp sfile
+            this.lastRun = thisRunSecond;
+        } catch(Exception e) {
+            LOG.error("AWS FlowLog reader run failed.", e);
+        }
     }
 
     private String buildFlowLogName(String streamName) {

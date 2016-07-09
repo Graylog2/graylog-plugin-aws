@@ -9,8 +9,10 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
+import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
+import org.graylog2.plugin.cluster.ClusterConfigService;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
 import org.graylog2.plugin.configuration.fields.ConfigurationField;
@@ -38,8 +40,6 @@ public class FlowLogTransport implements Transport {
     public static final String NAME = "flowlog";
 
     private static final String CK_AWS_REGION = "aws_region";
-    private static final String CK_ACCESS_KEY = "aws_access_key";
-    private static final String CK_SECRET_KEY = "aws_secret_key";
     private static final String CK_LOG_GROUP_NAME = "log_group_name";
 
     private FlowLogReader reader;
@@ -47,12 +47,15 @@ public class FlowLogTransport implements Transport {
 
     private final ServerStatus serverStatus;
     private final LocalMetricRegistry localRegistry;
+    private final ClusterConfigService clusterConfigService;
 
     @AssistedInject
     public FlowLogTransport(@Assisted final Configuration configuration,
+                               final ClusterConfigService clusterConfigService,
                                final EventBus serverEventBus,
                                final ServerStatus serverStatus,
                                LocalMetricRegistry localRegistry) {
+        this.clusterConfigService = clusterConfigService;
         this.serverStatus = serverStatus;
         this.localRegistry = localRegistry;
 
@@ -67,6 +70,8 @@ public class FlowLogTransport implements Transport {
                 lifecycleStateChange(Lifecycle.RUNNING);
             }
         });
+
+        AWSPluginConfiguration config = clusterConfigService.get(AWSPluginConfiguration.class);
 
         // Ready to run.
         paused.set(false);
@@ -88,8 +93,8 @@ public class FlowLogTransport implements Transport {
                 Region.getRegion(Regions.fromName(input.getConfiguration().getString(CK_AWS_REGION))),
                 input.getConfiguration().getString(CK_LOG_GROUP_NAME),
                 input,
-                input.getConfiguration().getString(CK_ACCESS_KEY),
-                input.getConfiguration().getString(CK_SECRET_KEY),
+                config.accessKey(),
+                config.secretKey(),
                 paused
         );
 
@@ -157,24 +162,6 @@ public class FlowLogTransport implements Transport {
                     "The AWS region to read CloudTrail for. The configured SQS queue " +
                             "must also be located in this region.",
                     ConfigurationField.Optional.NOT_OPTIONAL
-            ));
-
-            r.addField(new TextField(
-                    CK_ACCESS_KEY,
-                    "AWS access key",
-                    "",
-                    "Access key of an AWS user with sufficient permissions. (See documentation)",
-                    ConfigurationField.Optional.NOT_OPTIONAL,
-                    TextField.Attribute.IS_PASSWORD
-            ));
-
-            r.addField(new TextField(
-                    CK_SECRET_KEY,
-                    "AWS secret key",
-                    "",
-                    "Secret key of an AWS user with sufficient permissions. (See documentation)",
-                    ConfigurationField.Optional.NOT_OPTIONAL,
-                    TextField.Attribute.IS_PASSWORD
             ));
 
             r.addField(new TextField(
