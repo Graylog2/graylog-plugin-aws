@@ -10,6 +10,8 @@ import com.amazonaws.services.logs.model.GetLogEventsResult;
 import com.amazonaws.services.logs.model.LogStream;
 import com.amazonaws.services.logs.model.OutputLogEvent;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.graylog.aws.tools.StateFile;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.journal.RawMessage;
 import org.joda.time.DateTime;
@@ -17,6 +19,9 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FlowLogReader implements Runnable {
@@ -28,10 +33,9 @@ public class FlowLogReader implements Runnable {
     private final String accessKey;
     private final String secretKey;
 
-    private final AtomicBoolean paused;
+    private final StateFile statefile;
 
-    // TODO read from tmp file in every run() (remove this member)
-    DateTime lastRun;
+    private final AtomicBoolean paused;
 
     public FlowLogReader(Region region, String groupName, MessageInput input, String accessKey, String secretKey, AtomicBoolean paused) {
         this.region = region;
@@ -40,9 +44,12 @@ public class FlowLogReader implements Runnable {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
 
+        this.statefile = new StateFile("flowlog_last_read");
+
         this.paused = paused;
     }
 
+    // TODO metrics
     public void run() {
         // Don't run if underlying input is paused or not started yet.
         if(paused.get()) {
@@ -51,18 +58,19 @@ public class FlowLogReader implements Runnable {
         }
 
         try {
-
             LOG.debug("Starting.");
 
-            // TODO make offset configurable.
-            DateTime thisRunSecond = DateTime.now(DateTimeZone.UTC).withMillisOfSecond(0).minusMinutes(15);
+            // TODO make offset configurable?
+            DateTime thisRunSecond = DateTime.now(DateTimeZone.UTC)
+                    .withMillisOfSecond(0)
+                    .minusMinutes(15);
 
-            // TODO fock fock what if the runs takes longer than 15 sec? this srsly needs a lastCall thingy
+
+            DateTime lastRun = readLastRun();
             if (lastRun == null) {
-                lastRun = thisRunSecond.minusSeconds(15);
+                // If this is the first run or no last run info is available, read the latest 1 minute of data we can get.
+                lastRun = thisRunSecond.minusMinutes(1);
             }
-
-            // TODO metrics
 
             AWSLogsClient client = new AWSLogsClient(new BasicAWSCredentials(accessKey, secretKey));
             client.setRegion(region);
@@ -93,35 +101,52 @@ public class FlowLogReader implements Runnable {
             ImmutableList<LogStream> streams = streamsBuilder.build();
 
             for (LogStream stream : streams) {
-                LOG.debug("Reading FlowLogs [{}] from [{}] to [{}].", buildFlowLogName(stream.getLogStreamName()), lastRun, thisRunSecond);
-
-                try {
-                    GetLogEventsRequest req = new GetLogEventsRequest()
-                            .withLogGroupName(groupName)
-                            .withLogStreamName(stream.getLogStreamName())
-                            .withStartTime(lastRun.getMillis())
-                            .withEndTime(thisRunSecond.getMillis())
-                            .withLimit(10_000)
-                            .withStartFromHead(true);
-
-                    LOG.debug("Fetching logs of stream [{}] with following request parameters: {}", buildFlowLogName(stream.getLogStreamName()), req.toString());
-
-                    GetLogEventsResult logs = client.getLogEvents(req);
-
-                    // Iterate over all logs.
-                    for (OutputLogEvent log : logs.getEvents()) {
-                        String message = new StringBuilder(log.getTimestamp().toString()).append(" ").append(log.getMessage()).toString();
-                        sourceInput.processRawMessage(new RawMessage(message.getBytes()));
-                    }
-                } catch (Exception e) {
-                    LOG.error("Could not read AWS FlowLogs from stream [{}].", stream.getLogStreamName(), e);
-                }
+                readStream(thisRunSecond, lastRun, client, stream);
             }
 
-            // TODO persist in tmp sfile
-            this.lastRun = thisRunSecond;
+            writeLastRun(thisRunSecond);
         } catch(Exception e) {
             LOG.error("AWS FlowLog reader run failed.", e);
+        }
+    }
+
+    private void readStream(DateTime end, DateTime start, AWSLogsClient client, LogStream stream) {
+        LOG.debug("Reading FlowLogs [{}] from [{}] to [{}].", buildFlowLogName(stream.getLogStreamName()), start, end);
+
+        try {
+            GetLogEventsRequest req = new GetLogEventsRequest()
+                    .withLogGroupName(groupName)
+                    .withLogStreamName(stream.getLogStreamName())
+                    .withStartTime(start.getMillis())
+                    .withEndTime(end.getMillis())
+                    .withLimit(10_000) // TODO read smaller batches and use paging
+                    .withStartFromHead(true);
+
+            LOG.debug("Fetching logs of stream [{}] with following request parameters: {}", buildFlowLogName(stream.getLogStreamName()), req.toString());
+
+            GetLogEventsResult logs = client.getLogEvents(req);
+
+            // Iterate over all logs.
+            for (OutputLogEvent log : logs.getEvents()) {
+                String message = new StringBuilder(log.getTimestamp().toString()).append(" ").append(log.getMessage()).toString();
+                sourceInput.processRawMessage(new RawMessage(message.getBytes()));
+            }
+        } catch (Exception e) {
+            LOG.error("Could not read AWS FlowLogs from stream [{}].", stream.getLogStreamName(), e);
+        }
+    }
+
+    private void writeLastRun(DateTime thisRunSecond) throws IOException {
+        statefile.writeValue(thisRunSecond.toString());
+    }
+
+    private DateTime readLastRun() throws IOException {
+        String result = statefile.readValue();
+        if(result == null) {
+            LOG.info("No state file found. This is OK if this is the first run.");
+            return null;
+        } else {
+            return DateTime.parse(result);
         }
     }
 

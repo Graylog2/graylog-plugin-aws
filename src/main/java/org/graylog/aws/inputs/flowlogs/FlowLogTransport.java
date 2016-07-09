@@ -42,7 +42,6 @@ public class FlowLogTransport implements Transport {
     private static final String CK_AWS_REGION = "aws_region";
     private static final String CK_LOG_GROUP_NAME = "log_group_name";
 
-    private FlowLogReader reader;
     private AtomicBoolean paused;
 
     private final ServerStatus serverStatus;
@@ -89,7 +88,7 @@ public class FlowLogTransport implements Transport {
                         .build()
         );
 
-        reader = new FlowLogReader(
+        FlowLogReader reader = new FlowLogReader(
                 Region.getRegion(Regions.fromName(input.getConfiguration().getString(CK_AWS_REGION))),
                 input.getConfiguration().getString(CK_LOG_GROUP_NAME),
                 input,
@@ -98,8 +97,8 @@ public class FlowLogTransport implements Transport {
                 paused
         );
 
-        // Run with 15s delay between complete executions.
-        executor.scheduleWithFixedDelay(reader, 0, 15, TimeUnit.SECONDS);
+        // Run with 5s delay between complete executions.
+        executor.scheduleWithFixedDelay(reader, 0, 10, TimeUnit.SECONDS);
     }
 
     @Override
@@ -159,8 +158,7 @@ public class FlowLogTransport implements Transport {
                     "AWS Region",
                     Regions.US_EAST_1.getName(),
                     regions,
-                    "The AWS region to read CloudTrail for. The configured SQS queue " +
-                            "must also be located in this region.",
+                    "The AWS region the FlowLogs are stored in.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
 
