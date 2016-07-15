@@ -10,7 +10,6 @@ import com.amazonaws.services.logs.model.GetLogEventsResult;
 import com.amazonaws.services.logs.model.LogStream;
 import com.amazonaws.services.logs.model.OutputLogEvent;
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.graylog.aws.tools.StateFile;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.journal.RawMessage;
@@ -20,8 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FlowLogReader implements Runnable {
@@ -65,7 +62,6 @@ public class FlowLogReader implements Runnable {
                     .withMillisOfSecond(0)
                     .minusMinutes(15);
 
-
             DateTime lastRun = readLastRun();
             if (lastRun == null) {
                 // If this is the first run or no last run info is available, read the latest 1 minute of data we can get.
@@ -76,11 +72,10 @@ public class FlowLogReader implements Runnable {
             client.setRegion(region);
 
             // Get all flow log streams in this group. (TODO: support stream selection by prefix?)
+            DescribeLogStreamsRequest req = new DescribeLogStreamsRequest(groupName);
             ImmutableList.Builder<LogStream> streamsBuilder = ImmutableList.<LogStream>builder();
             String nextToken = null;
             while (true) {
-                DescribeLogStreamsRequest req = new DescribeLogStreamsRequest(groupName);
-
                 if (nextToken != null) {
                     // Subsequent page call.
                     req.withNextToken(nextToken);
@@ -119,17 +114,44 @@ public class FlowLogReader implements Runnable {
                     .withLogStreamName(stream.getLogStreamName())
                     .withStartTime(start.getMillis())
                     .withEndTime(end.getMillis())
-                    .withLimit(10_000) // TODO read smaller batches and use paging
                     .withStartFromHead(true);
 
             LOG.debug("Fetching logs of stream [{}] with following request parameters: {}", buildFlowLogName(stream.getLogStreamName()), req.toString());
 
-            GetLogEventsResult logs = client.getLogEvents(req);
+            // Iterate over pages that are available for this request.
+            String nextToken = null;
+            String previousToken;
+            while (true) {
+                if (nextToken != null) {
+                    // Subsequent page call.
+                    req.withNextToken(nextToken);
+                }
 
-            // Iterate over all logs.
-            for (OutputLogEvent log : logs.getEvents()) {
-                String message = new StringBuilder(log.getTimestamp().toString()).append(" ").append(log.getMessage()).toString();
-                sourceInput.processRawMessage(new RawMessage(message.getBytes()));
+                GetLogEventsResult logs = client.getLogEvents(req);
+                int count = logs.getEvents().size();
+
+                if (count > 0){
+                    LOG.debug("Processing <{}> FlowLogs for page [{}] of slice [{}].",
+                            count,
+                            (nextToken == null ? "FIRST" : nextToken),
+                            describeLogEventsRequest(req));
+
+                    // Process all messages
+                    for (OutputLogEvent log : logs.getEvents()) {
+                        String message = new StringBuilder(log.getTimestamp().toString()).append(" ").append(log.getMessage()).toString();
+                        sourceInput.processRawMessage(new RawMessage(message.getBytes()));
+                    }
+                } else {
+                    LOG.debug("Page [{}] of FlowLogs slice [{}] is empty.",
+                            (nextToken == null ? "FIRST" : nextToken),
+                            describeLogEventsRequest(req));
+                }
+
+                previousToken = nextToken;
+                nextToken = logs.getNextForwardToken();
+                if (nextToken == null || nextToken.equals(previousToken)) {
+                    break;
+                }
             }
         } catch (Exception e) {
             LOG.error("Could not read AWS FlowLogs from stream [{}].", stream.getLogStreamName(), e);
@@ -159,5 +181,15 @@ public class FlowLogReader implements Runnable {
                 .append(streamName)
                 .toString();
     }
+
+    private String describeLogEventsRequest(GetLogEventsRequest req) {
+        return new StringBuilder()
+                .append(buildFlowLogName(req.getLogStreamName()))
+                .append("{").append(new DateTime(req.getStartTime()))
+                .append("->")
+                .append(new DateTime(req.getEndTime())).append("}")
+                .toString();
+    }
+
 
 }

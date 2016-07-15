@@ -175,7 +175,7 @@ public class InstanceLookupTable {
         } else if(iface.getRequesterId().equals("amazon-rds")) {
             ownerId = "amazon-rds";
         } else {
-            LOG.error("AWS network interface with no association: [{}]", iface.getDescription());
+            LOG.debug("AWS network interface with no association: [{}]", iface.getDescription());
             return InstanceType.UNKNOWN;
         }
 
