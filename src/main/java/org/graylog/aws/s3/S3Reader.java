@@ -32,7 +32,7 @@ public class S3Reader {
         }
 
         byte[] bytes = IOUtils.toByteArray(o.getObjectContent());
-        return Tools.decompressGzip(bytes);
+        return Tools.decompressGzip(bytes, 10000000);
     }
 
 }
