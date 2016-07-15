@@ -89,15 +89,14 @@ public class FlowLogTransport implements Transport {
                         })
                         .build()
         );
-
+        
         FlowLogReader reader = new FlowLogReader(
                 Region.getRegion(Regions.fromName(input.getConfiguration().getString(CK_AWS_REGION))),
                 input.getConfiguration().getString(CK_LOG_GROUP_NAME),
                 input,
-                config.accessKey(),
-                config.secretKey(),
                 input.getConfiguration().getInt(CK_MAX_BACKTRACK),
-                paused
+                paused,
+                clusterConfigService
         );
 
         // Run with 5s delay between complete executions.

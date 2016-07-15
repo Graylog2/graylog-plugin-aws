@@ -10,7 +10,8 @@ import com.amazonaws.services.logs.model.GetLogEventsResult;
 import com.amazonaws.services.logs.model.LogStream;
 import com.amazonaws.services.logs.model.OutputLogEvent;
 import com.google.common.collect.ImmutableList;
-import org.graylog.aws.tools.StateFile;
+import org.graylog.aws.config.AWSPluginConfiguration;
+import org.graylog2.plugin.cluster.ClusterConfigService;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.journal.RawMessage;
 import org.joda.time.DateTime;
@@ -19,7 +20,6 @@ import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FlowLogReader implements Runnable {
@@ -28,31 +28,25 @@ public class FlowLogReader implements Runnable {
     private final Region region;
     private final String groupName;
     private final MessageInput sourceInput;
-    private final String accessKey;
-    private final String secretKey;
     private final int backtrackLimit;
 
-    private final StateFile statefile;
-
     private final AtomicBoolean paused;
+
+    private final ClusterConfigService configService;
 
     public FlowLogReader(Region region,
                          String groupName,
                          MessageInput input,
-                         String accessKey,
-                         String secretKey,
                          int backtrackLimit,
-                         AtomicBoolean paused) {
+                         AtomicBoolean paused,
+                         ClusterConfigService configService) {
         this.region = region;
         this.groupName = groupName;
         this.sourceInput = input;
-        this.accessKey = accessKey;
-        this.secretKey = secretKey;
         this.backtrackLimit = backtrackLimit;
 
-        this.statefile = new StateFile("flowlog_last_read");
-
         this.paused = paused;
+        this.configService = configService;
     }
 
     // TODO metrics
@@ -64,6 +58,13 @@ public class FlowLogReader implements Runnable {
         }
 
         try {
+            // Don't run if config is incomplete.
+            AWSPluginConfiguration config = configService.get(AWSPluginConfiguration.class);
+            if(config == null || !config.isComplete()) {
+                LOG.warn("AWS plugin is not fully configured. Not reading FlowLogs.");
+                return;
+            }
+
             LOG.debug("Starting.");
 
             // TODO make offset configurable?
@@ -86,7 +87,7 @@ public class FlowLogReader implements Runnable {
                 lastRun = thisRunSecond.minusHours(backtrackLimit);
             }
 
-            AWSLogsClient client = new AWSLogsClient(new BasicAWSCredentials(accessKey, secretKey));
+            AWSLogsClient client = new AWSLogsClient(new BasicAWSCredentials(config.accessKey(), config.secretKey()));
             client.setRegion(region);
 
             // Get all flow log streams in this group. (TODO: support stream selection by prefix?)
@@ -176,17 +177,28 @@ public class FlowLogReader implements Runnable {
         }
     }
 
-    private void writeLastRun(DateTime thisRunSecond) throws IOException {
-        statefile.writeValue(thisRunSecond.toString());
+    private void writeLastRun(DateTime thisRunSecond) {
+        // TODO: fuck me this is clunky and I can smell them edge case race conditions
+        AWSPluginConfiguration oldConf = configService.get(AWSPluginConfiguration.class);
+        AWSPluginConfiguration newConf = AWSPluginConfiguration.create(
+                oldConf.lookupsEnabled(),
+                oldConf.lookupRegions(),
+                oldConf.accessKey(),
+                oldConf.secretKey(),
+                thisRunSecond.toString()
+        );
+
+        configService.write(newConf);
     }
 
-    private DateTime readLastRun() throws IOException {
-        String result = statefile.readValue();
-        if(result == null) {
-            LOG.info("No state file found. This is OK if this is the first run.");
+    private DateTime readLastRun() {
+        AWSPluginConfiguration c = configService.get(AWSPluginConfiguration.class);
+
+        if(c == null || c.flowlogsLastRun() == null || c.flowlogsLastRun().isEmpty()) {
+            LOG.info("No lastRun state found in clusterConfig. This is OK if this is the first run on this node.");
             return null;
         } else {
-            return DateTime.parse(result);
+            return DateTime.parse(c.flowlogsLastRun());
         }
     }
 

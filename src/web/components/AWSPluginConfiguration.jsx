@@ -17,6 +17,7 @@ const AWSPluginConfiguration = React.createClass({
                 lookup_regions: 'us-east-1,us-west-1,us-west-2,eu-west-1,eu-central-1',
                 access_key: '',
                 secret_key: '',
+                flowlogs_last_run: ''
             },
         };
     },

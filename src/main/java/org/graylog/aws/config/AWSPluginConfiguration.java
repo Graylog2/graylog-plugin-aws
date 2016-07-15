@@ -32,17 +32,21 @@ public abstract class AWSPluginConfiguration {
     @JsonProperty("secret_key")
     public abstract String secretKey();
 
+    @JsonProperty("flowlogs_last_run")
+    public abstract String flowlogsLastRun();
 
     @JsonCreator
     public static AWSPluginConfiguration create(@JsonProperty("lookups_enabled") boolean lookupsEnabled,
                                                 @JsonProperty("lookup_regions") String lookupRegions,
                                                 @JsonProperty("access_key") String accessKey,
-                                                @JsonProperty("secret_key") String secretKey) {
+                                                @JsonProperty("secret_key") String secretKey,
+                                                @JsonProperty("flowlogs_last_run") String flowlogsLastRun) {
         return builder()
                 .lookupsEnabled(lookupsEnabled)
                 .lookupRegions(lookupRegions)
                 .accessKey(accessKey)
                 .secretKey(secretKey)
+                .flowlogsLastRun(flowlogsLastRun)
                 .build();
     }
 
@@ -87,6 +91,8 @@ public abstract class AWSPluginConfiguration {
         public abstract Builder accessKey(String accessKey);
 
         public abstract Builder secretKey(String secretKey);
+
+        public abstract Builder flowlogsLastRun(String lastRun);
 
         public abstract AWSPluginConfiguration build();
     }
