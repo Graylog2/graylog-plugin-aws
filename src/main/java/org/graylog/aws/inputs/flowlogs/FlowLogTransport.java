@@ -17,6 +17,7 @@ import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
 import org.graylog2.plugin.configuration.fields.ConfigurationField;
 import org.graylog2.plugin.configuration.fields.DropdownField;
+import org.graylog2.plugin.configuration.fields.NumberField;
 import org.graylog2.plugin.configuration.fields.TextField;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.inputs.MisfireException;
@@ -41,6 +42,7 @@ public class FlowLogTransport implements Transport {
 
     private static final String CK_AWS_REGION = "aws_region";
     private static final String CK_LOG_GROUP_NAME = "log_group_name";
+    private static final String CK_MAX_BACKTRACK = "max_backtrack";
 
     private AtomicBoolean paused;
 
@@ -94,6 +96,7 @@ public class FlowLogTransport implements Transport {
                 input,
                 config.accessKey(),
                 config.secretKey(),
+                input.getConfiguration().getInt(CK_MAX_BACKTRACK),
                 paused
         );
 
@@ -168,6 +171,17 @@ public class FlowLogTransport implements Transport {
                     "",
                     "The CloudWatch log group name that the flow logs are being written to. (Will read all flow log streams in this group)",
                     ConfigurationField.Optional.NOT_OPTIONAL
+            ));
+
+            r.addField(new NumberField(
+                    CK_MAX_BACKTRACK,
+                    "Maximum history backtrack (hours)",
+                    12,
+                    "If the input (or Graylog) is not running for a while, it will try to read all available data since the last time it had " +
+                            "successfully read something. This parameter controls how many maximum hours it will go back in time to avoid excessive " +
+                            "data transfer and processing in case of an input that was not running for a long time.",
+                    ConfigurationField.Optional.NOT_OPTIONAL,
+                    NumberField.Attribute.ONLY_POSITIVE
             ));
 
             return r;

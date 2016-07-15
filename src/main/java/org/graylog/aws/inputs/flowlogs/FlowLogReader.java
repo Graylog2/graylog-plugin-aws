@@ -15,6 +15,7 @@ import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.journal.RawMessage;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,17 +30,25 @@ public class FlowLogReader implements Runnable {
     private final MessageInput sourceInput;
     private final String accessKey;
     private final String secretKey;
+    private final int backtrackLimit;
 
     private final StateFile statefile;
 
     private final AtomicBoolean paused;
 
-    public FlowLogReader(Region region, String groupName, MessageInput input, String accessKey, String secretKey, AtomicBoolean paused) {
+    public FlowLogReader(Region region,
+                         String groupName,
+                         MessageInput input,
+                         String accessKey,
+                         String secretKey,
+                         int backtrackLimit,
+                         AtomicBoolean paused) {
         this.region = region;
         this.groupName = groupName;
         this.sourceInput = input;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
+        this.backtrackLimit = backtrackLimit;
 
         this.statefile = new StateFile("flowlog_last_read");
 
@@ -66,6 +75,15 @@ public class FlowLogReader implements Runnable {
             if (lastRun == null) {
                 // If this is the first run or no last run info is available, read the latest 1 minute of data we can get.
                 lastRun = thisRunSecond.minusMinutes(1);
+            }
+
+            // See if we need to limit backtracking based on user configuration
+            Duration backtrack = new Duration(lastRun, thisRunSecond);
+            if (backtrack.getStandardHours() > backtrackLimit) {
+                LOG.warn("Last run was <{}> hours ago but backtrack limit is <{}> hours. Limiting.",
+                        backtrack.getStandardHours(), backtrackLimit);
+
+                lastRun = thisRunSecond.minusHours(backtrackLimit);
             }
 
             AWSLogsClient client = new AWSLogsClient(new BasicAWSCredentials(accessKey, secretKey));
