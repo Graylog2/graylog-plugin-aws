@@ -101,7 +101,7 @@ public class FlowLogTransport implements Transport {
                 clusterConfigService
         );
 
-        // Run with 5s delay between complete executions.
+        // Run with 10s delay between complete executions.
         executor.scheduleWithFixedDelay(reader, 0, 10, TimeUnit.SECONDS);
     }
 
