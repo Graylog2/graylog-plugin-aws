@@ -3,6 +3,7 @@ package org.graylog.aws.inputs.cloudtrail.json;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
+import com.graylog2.input.cloudtrail.json.CloudTrailResponseElements;
 
 import java.io.Serializable;
 import java.util.Arrays;
