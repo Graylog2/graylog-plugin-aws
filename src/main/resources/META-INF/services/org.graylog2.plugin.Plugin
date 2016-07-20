@@ -1,1 +1,1 @@
-com.graylog2.plugin.AWSInputPlugin
+org.graylog.aws.plugin.AWSPlugin

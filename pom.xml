@@ -7,7 +7,7 @@
 
     <groupId>org.graylog.plugins</groupId>
     <artifactId>graylog-plugin-aws</artifactId>
-    <version>0.6.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -28,7 +28,7 @@
         <maven.install.skip>true</maven.install.skip>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.site.skip>true</maven.site.skip>
-        <graylog2.version>2.0.0</graylog2.version>
+        <graylog2.version>2.1.0-alpha.3-SNAPSHOT</graylog2.version>
         <graylog2.plugin-dir>/usr/share/graylog-server/plugin</graylog2.plugin-dir>
         <graylog.plugin-repo-name>Graylog2/graylog-plugin-aws</graylog.plugin-repo-name>
         <aws-java-sdk.version>1.11.14</aws-java-sdk.version>
@@ -64,6 +64,44 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-logs</artifactId>
+            <version>${aws-java-sdk.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-ec2</artifactId>
+            <version>${aws-java-sdk.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-elasticloadbalancing</artifactId>
+            <version>${aws-java-sdk.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.google.auto.value</groupId>
+            <artifactId>auto-value</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>6.9.10</version>
@@ -72,6 +110,15 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource><directory>build</directory></resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>**/*.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -164,4 +211,57 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>web-interface-build</id>
+            <activation>
+                <property>
+                    <name>!skip.web.build</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <version>1.0</version>
+
+                        <executions>
+                            <execution>
+                                <id>install node and npm</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <configuration>
+                                    <nodeVersion>v4.4.3</nodeVersion>
+                                    <npmVersion>3.8.6</npmVersion>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>npm install</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <!-- Optional configuration which provides for running any npm command -->
+                                <configuration>
+                                    <arguments>install</arguments>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>npm run build</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
