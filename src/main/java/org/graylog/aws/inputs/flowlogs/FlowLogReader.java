@@ -29,6 +29,7 @@ public class FlowLogReader implements Runnable {
     private final String groupName;
     private final MessageInput sourceInput;
     private final int backtrackLimit;
+    private final int delayMinutes;
 
     private final AtomicBoolean paused;
 
@@ -38,15 +39,19 @@ public class FlowLogReader implements Runnable {
                          String groupName,
                          MessageInput input,
                          int backtrackLimit,
+                         int delayMinutes,
                          AtomicBoolean paused,
                          ClusterConfigService configService) {
         this.region = region;
         this.groupName = groupName;
         this.sourceInput = input;
         this.backtrackLimit = backtrackLimit;
+        this.delayMinutes = delayMinutes;
 
         this.paused = paused;
         this.configService = configService;
+
+        LOG.info("Starting AWS FlowLog reader with configured [{}m] delay.", this.delayMinutes);
     }
 
     // TODO metrics
@@ -67,10 +72,9 @@ public class FlowLogReader implements Runnable {
 
             LOG.debug("Starting.");
 
-            // TODO make offset configurable?
             DateTime thisRunSecond = DateTime.now(DateTimeZone.UTC)
                     .withMillisOfSecond(0)
-                    .minusMinutes(15);
+                    .minusMinutes(delayMinutes);
 
             DateTime lastRun = readLastRun();
             if (lastRun == null) {
