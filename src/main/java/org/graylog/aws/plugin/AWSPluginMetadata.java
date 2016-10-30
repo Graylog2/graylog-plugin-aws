@@ -32,7 +32,7 @@ public class AWSPluginMetadata implements PluginMetaData {
 
     @Override
     public Version getVersion() {
-        return new Version(1, 0, 0);
+        return new Version(1, 1, 0);
     }
 
     @Override
