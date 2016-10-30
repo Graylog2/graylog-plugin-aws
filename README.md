@@ -26,7 +26,7 @@ Note that the AWS access and secret key are currently not stored encrypted. This
 
 ### AWS entity translation
 
-The configuration of this plugin has a parameter that controls if AWS entity translations are supposed to be attempted or not. This basically means that the plugin will try to find certain fields like a source IP address and enrich the log message with more information about the AWS entity (like a EC2 box, an ELB instance, a RDS database, …) automatically. 
+The configuration of this plugin has a parameter that controls if AWS entity translations are supposed to be attempted or not. This basically means that the plugin will try to find certain fields like a source IP address and enrich the log message with more information about the AWS entity (like a EC2 box, an ELB instance, a RDS database, …) automatically.
 
 This would look something like this:
 
@@ -85,36 +85,83 @@ After a few minutes (usually 15 minutes but it can take up to an hour), AWS will
 
 [![](https://s3.amazonaws.com/graylog2public/flowlogs_2.jpg)](https://s3.amazonaws.com/graylog2public/flowlogs_2.jpg)
 
-Now let’s go on and configure Graylog to read those logs.
+Now let’s go on and instruct AWS to write the FlowLogs to a [Kinesis](https://aws.amazon.com/kinesis/) stream.
 
-### Step 2: Set up permissions in IAM
+### Steps 2: Set up Kinesis stream
 
-First of all you need to create a IAM user that has the correct permissions to read from the CloudWatch log APIs. Make sure to copy the access and secret key because we will need them later to configure the Graylog input.
+Create a [Kinesis](https://aws.amazon.com/kinesis/) stream using the AWS CLI tools:
 
-Here are our recommended IAM permissions:
+    aws kinesis create-stream --stream-name "flowlogs" --shard-count 1
+
+Now get the Stream details:
+
+    aws kinesis describe-stream --stream-name "flowlogs"
+
+*Copy the StreamARN from the output.* We'll need it later.
+
+Next, create a file called _trust_policy.json_ with the following content:
 
 ```
 {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "Stmt1469413738000",
-            "Effect": "Allow",
-            "Action": [
-                "logs:DescribeLogStreams",
-                "logs:GetLogEvents"
-            ],
-            "Resource": "*"
-        }
-    ]
+  "Statement": {
+    "Effect": "Allow",
+    "Principal": { "Service": "logs.eu-west-1.amazonaws.com" },
+    "Action": "sts:AssumeRole"
+  }
 }
 ```
 
+*Make sure to change the _Service_ from _eu-west-1_ to the Region you are running in.*
+
+Now create a a new IAM role with the permissions in the file we just created:
+
+    aws iam create-role --role-name CWLtoKinesisRole --assume-role-policy-document file://trust_policy.json
+
+*Copy the ARN of the role you just created.* You'll need it in the next step.
+
+Create a new file called _permissions.json_ and set both ARNs to the ARNs your copied above:
+
+```
+{
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "kinesis:PutRecord",
+      "Resource": "arn:aws:kinesis:eu-west-1:[YOUR KINESIS STREAM ARN HERE]:stream/flowlogs"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::[YOUR IAM ARN HERE]:role/CWLtoKinesisRole"
+    }
+  ]
+}
+```
+
+*Make sure to change the AWS regions here if necessary, too.*
+
+Now attach this role:
+
+    aws iam put-role-policy --role-name CWLtoKinesisRole --policy-name Permissions-Policy-For-CWL --policy-document file://permissions.json
+
+The last step is to create the actual subscription that will write the FlowLogs to Kinesis:
+
+```
+aws logs put-subscription-filter \
+    --filter-name "MatchAllValidFilter" \
+    --filter-pattern "OK" \
+    --log-group-name "my-flowlogs" \
+    --destination-arn "arn:aws:kinesis:eu-west-1:123456789:stream/flowlogs" \
+    --role-arn "arn:aws:iam::123456789012:role/CWLtoKinesisRole"
+```
+
+You should now see FlowLogs being written into your Kinesis stream.
+
 ### Step 4: Launch input
 
-Now go into the Graylog Web Interface and start a new *AWS FlowLogs input*. It will ask you for some simple parameters like the log group that your Flow Logs are being written to (you chose that when creating the Flow Log on the network interface or VPC).
+Now go into the Graylog Web Interface and start a new *AWS FlowLogs input*. It will ask you for some simple parameters like the Kinesis Stream name you are writing your FlowLogs to.
 
-**Important: AWS delivers the Flow Logs with a delay of about 15 minutes.** This is why “Search in last 5 minutes” Graylog searches will not return any results. Always search in at least the last 15 or 30 minutes.
+**Important: AWS delivers the FlowLogs with a few minutes delay and not always in an ordered fashion. Keep this in mind when searching over messages in a recent time frame.*
 
 ## CloudTrail setup and configuration
 
