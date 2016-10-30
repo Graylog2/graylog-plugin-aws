@@ -3,6 +3,7 @@ package org.graylog.aws.inputs.flowlogs;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.codahale.metrics.MetricSet;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,89 +43,47 @@ public class FlowLogTransport implements Transport {
     public static final String NAME = "flowlog";
 
     private static final String CK_AWS_REGION = "aws_region";
-    private static final String CK_LOG_GROUP_NAME = "log_group_name";
-    private static final String CK_MAX_BACKTRACK = "max_backtrack";
-    private static final String CK_DELAY_MINUTES = "read_delay_minutes";
+    private static final String CK_KINESIS_STREAM_NAME = "kinesis_stream_name";
 
-    private AtomicBoolean paused;
-
-    private final ServerStatus serverStatus;
+    private final Configuration configuration;
     private final LocalMetricRegistry localRegistry;
     private final ClusterConfigService clusterConfigService;
+
+    private FlowLogReader reader;
 
     @AssistedInject
     public FlowLogTransport(@Assisted final Configuration configuration,
                                final ClusterConfigService clusterConfigService,
-                               final EventBus serverEventBus,
-                               final ServerStatus serverStatus,
                                LocalMetricRegistry localRegistry) {
         this.clusterConfigService = clusterConfigService;
-        this.serverStatus = serverStatus;
+        this.configuration = configuration;
         this.localRegistry = localRegistry;
-
-        this.paused = new AtomicBoolean(true);
     }
 
     @Override
     public void launch(MessageInput input) throws MisfireException {
-        serverStatus.awaitRunning(new Runnable() {
-            @Override
-            public void run() {
-                lifecycleStateChange(Lifecycle.RUNNING);
-            }
-        });
+        ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+                .setDaemon(true)
+                .setNameFormat("aws-flowlog-reader-%d")
+                .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS FlowLogs reader.", e))
+                .build());
 
-        AWSPluginConfiguration config = clusterConfigService.get(AWSPluginConfiguration.class);
-
-        // Ready to run.
-        paused.set(false);
-
-        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryBuilder()
-                        .setDaemon(true)
-                        .setNameFormat("aws-flowlog-reader-%d")
-                        .setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                            @Override
-                            public void uncaughtException(Thread t, Throwable e) {
-                                LOG.error("Uncaught exception in AWS FlowLogs reader.", e);
-                            }
-                        })
-                        .build()
-        );
-        
-        FlowLogReader reader = new FlowLogReader(
-                Region.getRegion(Regions.fromName(input.getConfiguration().getString(CK_AWS_REGION))),
-                input.getConfiguration().getString(CK_LOG_GROUP_NAME),
+        this.reader = new FlowLogReader(
+                this.configuration.getString(CK_KINESIS_STREAM_NAME),
+                Region.getRegion(Regions.fromName(this.configuration.getString(CK_AWS_REGION))),
                 input,
-                input.getConfiguration().getInt(CK_MAX_BACKTRACK),
-                input.getConfiguration().getInt(CK_DELAY_MINUTES),
-                paused,
                 clusterConfigService
         );
 
-        // Run with 10s delay between complete executions.
-        executor.scheduleWithFixedDelay(reader, 0, 10, TimeUnit.SECONDS);
+        LOG.info("Starting FlowLogs Kinesis reader thread.");
+
+        executor.submit(this.reader);
     }
 
     @Override
     public void stop() {
-        // NEIN
-    }
-
-    @Subscribe
-    public void lifecycleStateChange(Lifecycle lifecycle) {
-        LOG.debug("Lifecycle changed to {}", lifecycle);
-        switch (lifecycle) {
-            case PAUSED:
-            case FAILED:
-            case HALTING:
-                // Pause executor
-                paused.set(true);
-                break;
-            default:
-                // Start executor
-                paused.set(false);
-                break;
+        if(this.reader != null) {
+            this.reader.stop();
         }
     }
 
@@ -167,34 +127,11 @@ public class FlowLogTransport implements Transport {
             ));
 
             r.addField(new TextField(
-                    CK_LOG_GROUP_NAME,
-                    "Log group name",
+                    CK_KINESIS_STREAM_NAME,
+                    "Kinesis Stream name",
                     "",
-                    "The CloudWatch log group name that the flow logs are being written to. (Will read all flow log streams in this group)",
+                    "The name of the Kinesis Stream that receives your FlowLog messages. See README for instructions on how to connect FlowLogs to a Kinesis Stream.",
                     ConfigurationField.Optional.NOT_OPTIONAL
-            ));
-
-            r.addField(new NumberField(
-                    CK_MAX_BACKTRACK,
-                    "Maximum history backtrack (hours)",
-                    12,
-                    "If the input (or Graylog) is not running for a while, it will try to read all available data since the last time it had " +
-                            "successfully read something. This parameter controls how many maximum hours it will go back in time to avoid excessive " +
-                            "data transfer and processing in case of an input that was not running for a long time.",
-                    ConfigurationField.Optional.NOT_OPTIONAL,
-                    NumberField.Attribute.ONLY_POSITIVE
-            ));
-
-            r.addField(new NumberField(
-                    CK_DELAY_MINUTES,
-                    "Read delay (minutes)",
-                    15,
-                    "AWS does not write FlowLogs in real-time but is always a few minutes behind. You can see the delay by comparing the log timestamp " +
-                            "to the actual time and 15 minutes is a good default value. You will not receive any FlowLogs if this parameter is set too low " +
-                            "and usually it requires no change from the default value. This has only been made configurable for the case that AWS is getting " +
-                            "close to real-time logs in the future. Do not touch it until that happens.",
-                    ConfigurationField.Optional.NOT_OPTIONAL,
-                    NumberField.Attribute.ONLY_POSITIVE
             ));
 
             return r;

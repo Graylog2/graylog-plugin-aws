@@ -46,7 +46,7 @@ public class FlowLogCodec implements Codec {
             String[] parts = rawString.split(" ");
 
             if (parts.length != 15) {
-                LOG.warn("Received FlowLog message with not exactly 15 fields. Skipping.");
+                LOG.warn("Received FlowLog message with not exactly 15 fields. Skipping. Message was: [{}]", rawString);
                 return null;
             }
 
