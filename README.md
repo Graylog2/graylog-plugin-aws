@@ -97,7 +97,7 @@ Now get the Stream details:
 
     aws kinesis describe-stream --stream-name "flowlogs"
 
-*Copy the StreamARN from the output.* We'll need it later.
+**Copy the StreamARN from the output.** We'll need it later.
 
 Next, create a file called _trust_policy.json_ with the following content:
 
@@ -111,13 +111,13 @@ Next, create a file called _trust_policy.json_ with the following content:
 }
 ```
 
-*Make sure to change the _Service_ from _eu-west-1_ to the Region you are running in.*
+**Make sure to change the _Service_ from _eu-west-1_ to the Region you are running in.**
 
 Now create a a new IAM role with the permissions in the file we just created:
 
     aws iam create-role --role-name CWLtoKinesisRole --assume-role-policy-document file://trust_policy.json
 
-*Copy the ARN of the role you just created.* You'll need it in the next step.
+**Copy the ARN of the role you just created.** You'll need it in the next step.
 
 Create a new file called _permissions.json_ and set both ARNs to the ARNs your copied above:
 
@@ -138,7 +138,7 @@ Create a new file called _permissions.json_ and set both ARNs to the ARNs your c
 }
 ```
 
-*Make sure to change the AWS regions here if necessary, too.*
+**Make sure to change the AWS regions here if necessary, too.**
 
 Now attach this role:
 
