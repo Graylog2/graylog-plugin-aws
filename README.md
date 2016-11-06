@@ -245,7 +245,7 @@ Restart `graylog-server` and you should see the new input type *AWS CloudTrail I
 * AmazonDynamoDBFullAccess
 * AmazonKinesisReadOnlyAccess
 
-Note that his is very open standard permissions. We recommend to use those for a test setup but further boil them down to only let them access (read+write) the DynamoDB table we automatically created and also to only call `cloudwatch:PutMetricData`.
+**Note that these are very open standard permissions.** We recommend to use them for a test setup but further boil them down to only allow  access (read+write) to the DynamoDB table we automatically created (you'll see it in the list of tables) and also to only call `cloudwatch:PutMetricData`. How to get the ARNs and how to create custom policies would be out of scope for this guide.
 
 ## Usage
 
