@@ -239,6 +239,14 @@ Restart `graylog-server` and you should see the new input type *AWS CloudTrail I
 
 (Make sure to replace *resource* values with the actual ARNs of your environment)
 
+**More required IAM roles:** The way we communicate with Kinesis requires us to store some metadata in AWS DynamoDB and we are also writing some metrics back to AWS CloudWatch. For this to work you have to attach the following standard AWS IAM policies to your AWS API user:
+
+* CloudWatchFullAccess
+* AmazonDynamoDBFullAccess
+* AmazonKinesisReadOnlyAccess
+
+Note that his is very open standard permissions. We recommend to use those for a test setup but further boil them down to only let them access (read+write) the DynamoDB table we automatically created and also to only call `cloudwatch:PutMetricData`.
+
 ## Usage
 
 You should see CloudTrail messages coming in after launching the input. (Note that it can take a few minutes based on how frequent systems are accessing your AWS resource) **You can even stop Graylog and it will catch up with all CloudTrail messages that were written since it was stopped when it is started a!gain.**
