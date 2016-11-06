@@ -72,6 +72,7 @@ public class CloudTrailSubscriber extends Thread {
         TreeReader reader = new TreeReader();
         S3Reader s3Reader = new S3Reader(accessKey, secretKey);
 
+        // This looks weird but it actually makes sense! Believe me.
         while (!stopped) {
             while (!stopped) {
                 if (paused) {
@@ -86,7 +87,7 @@ public class CloudTrailSubscriber extends Thread {
                 try {
                     notifications = subscriber.getNotifications();
                 } catch (Exception e) {
-                    LOG.error("Could not read messages from SNS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
+                    LOG.error("Could not read messages from SQS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
                     break;
                 }
 
