@@ -27,6 +27,7 @@ public class S3Reader {
 
         S3Object o = c.getObject(bucket, key);
 
+        
         if (o == null) {
             throw new RuntimeException("Could not get S3 object from bucket [" + bucket + "].");
         }

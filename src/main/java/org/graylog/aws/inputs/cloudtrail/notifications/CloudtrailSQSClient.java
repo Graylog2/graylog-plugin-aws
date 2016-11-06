@@ -50,7 +50,7 @@ public class CloudtrailSQSClient {
         List<CloudtrailSNSNotification> notifications = Lists.newArrayList();
 
         ReceiveMessageRequest request = new ReceiveMessageRequest(queueName);
-        request.setMaxNumberOfMessages(1);
+        request.setMaxNumberOfMessages(10);
         ReceiveMessageResult result = sqs.receiveMessage(request);
 
         LOG.debug("Received [{}] SQS CloudTrail notifications.", result.getMessages().size());
