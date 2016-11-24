@@ -99,8 +99,6 @@ public class CloudTrailTransport extends ThrottleableTransport {
     public void doLaunch(MessageInput input) throws MisfireException {
         serverStatus.awaitRunning(() -> lifecycleStateChange(Lifecycle.RUNNING));
 
-        AWSPluginConfiguration config = clusterConfigService.get(AWSPluginConfiguration.class);
-
         LOG.info("Starting cloud trail subscriber");
 
         final String legacyRegionName = input.getConfiguration().getString(CK_LEGACY_AWS_REGION, DEFAULT_REGION.getName());
@@ -114,8 +112,6 @@ public class CloudTrailTransport extends ThrottleableTransport {
                 Region.getRegion(Regions.fromName(s3RegionName)),
                 input.getConfiguration().getString(CK_SQS_NAME),
                 input,
-                config.accessKey(),
-                config.secretKey(),
                 proxyUrl
         );
 

@@ -92,12 +92,6 @@ const AWSPluginConfiguration = React.createClass({
 
                     <dt>Lookup regions:</dt>
                     <dd>{this.state.config.lookup_regions ? this.state.config.lookup_regions : "[not set]" }</dd>
-
-                    <dt>Access Key:</dt>
-                    <dd>{this.state.config.access_key ? "***********" : "[not set]" }</dd>
-
-                    <dt>Secret Key:</dt>
-                    <dd>{this.state.config.secret_key ? "***********" : "[not set]"}</dd>
                 </dl>
 
                 <IfPermitted permissions="clusterconfigentry:edit">
