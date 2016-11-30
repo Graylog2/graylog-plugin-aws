@@ -168,8 +168,8 @@ public class S3Transport extends ThrottleableTransport {
                     CK_ACCESS_KEY,
                     "AWS access key",
                     "",
-                    "Access key of an AWS user with sufficient permissions. Leave blank to use Instance Profile Credentials. (See documentation)",
-                    ConfigurationField.Optional.OPTIONAL,
+                    "Access key of an AWS user with sufficient permissions.",
+                    ConfigurationField.Optional.NOT_OPTIONAL,
                     TextField.Attribute.IS_PASSWORD
             ));
 
@@ -177,8 +177,8 @@ public class S3Transport extends ThrottleableTransport {
                     CK_SECRET_KEY,
                     "AWS secret key",
                     "",
-                    "Secret key of an AWS user with sufficient permissions. Leave blank to use Instance Profile Credentials. (See documentation)",
-                    ConfigurationField.Optional.OPTIONAL,
+                    "Secret key of an AWS user with sufficient permissions",
+                    ConfigurationField.Optional.NOT_OPTIONAL,
                     TextField.Attribute.IS_PASSWORD
             ));
 
