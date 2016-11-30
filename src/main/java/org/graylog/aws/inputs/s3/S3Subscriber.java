@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -103,13 +104,25 @@ public class S3Subscriber extends Thread {
                     LOG.debug("Processing " + notifications.size() + " S3 notifications in SQS");
                     for (S3SNSNotification n : notifications) {
                         try {
-                            LOG.debug("Reading messages from S3 file " + n.getS3Bucket() + "/" + n.getS3ObjectKey());
-                            //TODO: check for *.gz for reading a compressed file. ELB access logs are not compressed.
-                            BufferedReader messages = new BufferedReader(new InputStreamReader(s3Reader.readCompressedStream(s3Region, n.getS3Bucket(), n.getS3ObjectKey())));
+                            LOG.info("Reading messages from S3 file " + n.getS3Bucket() + "/" + n.getS3ObjectKey());
+
+                            InputStream stream;
+
+                            // TODO: do this better
+                            if (n.getS3ObjectKey().endsWith("gz")) {
+                                stream = s3Reader.readCompressedStream(s3Region, n.getS3Bucket(), n.getS3ObjectKey());
+                            } else {
+                                stream = s3Reader.readStream(s3Region, n.getS3Bucket(), n.getS3ObjectKey());
+                            }
+
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+
                             String message;
-                            while ((message = messages.readLine()) != null) {
+                            while ((message = reader.readLine()) != null) {
                                 sourceInput.processRawMessage(new RawMessage(message.getBytes()));
                             }
+
+                            stream.close();
 
                         } catch (Exception e) {
                             LOG.error("Could not read s3 log file for <{}>. Skipping.", n.getS3Bucket() + "/" + n.getS3ObjectKey(), e);

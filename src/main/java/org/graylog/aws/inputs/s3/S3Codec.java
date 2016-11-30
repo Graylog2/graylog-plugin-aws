@@ -1,6 +1,5 @@
 package org.graylog.aws.inputs.s3;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import org.graylog2.plugin.Message;
@@ -19,12 +18,10 @@ public class S3Codec implements Codec {
     public static final String NAME = "AWSS3";
 
     private final Configuration configuration;
-    private final ObjectMapper objectMapper;
 
     @AssistedInject
-    public S3Codec(@Assisted Configuration configuration, ObjectMapper objectMapper) {
+    public S3Codec(@Assisted Configuration configuration) {
         this.configuration = configuration;
-        this.objectMapper = objectMapper;
     }
 
     @Nullable
