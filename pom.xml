@@ -30,7 +30,7 @@
         <maven.install.skip>true</maven.install.skip>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.site.skip>true</maven.site.skip>
-        <graylog2.version>2.1.1</graylog2.version>
+        <graylog2.version>2.1.3</graylog2.version>
         <graylog2.plugin-dir>/usr/share/graylog-server/plugin</graylog2.plugin-dir>
         <graylog.plugin-repo-name>Graylog2/graylog-plugin-aws</graylog.plugin-repo-name>
         <aws-java-sdk.version>1.11.98</aws-java-sdk.version>
