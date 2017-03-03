@@ -9,6 +9,7 @@ import java.net.URI;
 import java.util.Set;
 
 public class AWSPluginMetadata implements PluginMetaData {
+    private static final String PLUGIN_PROPERTIES = "org.graylog.plugins.graylog-plugin-aws/graylog-plugin.properties";
 
     @Override
     public String getUniqueId() {
@@ -32,7 +33,7 @@ public class AWSPluginMetadata implements PluginMetaData {
 
     @Override
     public Version getVersion() {
-        return Version.from(1, 3, 2);
+        return Version.fromPluginProperties(getClass(), PLUGIN_PROPERTIES, "version", Version.from(1, 3, 0));
     }
 
     @Override
@@ -42,7 +43,7 @@ public class AWSPluginMetadata implements PluginMetaData {
 
     @Override
     public Version getRequiredVersion() {
-        return Version.from(2, 1, 3);
+        return Version.fromPluginProperties(getClass(), PLUGIN_PROPERTIES, "graylog.version", Version.from(2, 2, 0));
     }
 
     @Override
