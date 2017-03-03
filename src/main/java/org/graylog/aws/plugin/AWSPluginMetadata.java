@@ -32,7 +32,7 @@ public class AWSPluginMetadata implements PluginMetaData {
 
     @Override
     public Version getVersion() {
-        return new Version(1, 2, 0);
+        return Version.from(1, 2, 1);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class AWSPluginMetadata implements PluginMetaData {
 
     @Override
     public Version getRequiredVersion() {
-        return new Version(2, 0, 0);
+        return Version.from(2, 1, 3);
     }
 
     @Override
