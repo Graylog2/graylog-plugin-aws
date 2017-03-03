@@ -7,7 +7,7 @@
 
     <groupId>org.graylog.plugins</groupId>
     <artifactId>graylog-plugin-aws</artifactId>
-    <version>1.2.1-SNAPSHOT</version>
+    <version>1.2.1</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
