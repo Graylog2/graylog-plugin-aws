@@ -31,7 +31,7 @@
         <graylog2.version>2.1.1</graylog2.version>
         <graylog2.plugin-dir>/usr/share/graylog-server/plugin</graylog2.plugin-dir>
         <graylog.plugin-repo-name>Graylog2/graylog-plugin-aws</graylog.plugin-repo-name>
-        <aws-java-sdk.version>1.11.14</aws-java-sdk.version>
+        <aws-java-sdk.version>1.11.98</aws-java-sdk.version>
     </properties>
 
     <dependencies>
