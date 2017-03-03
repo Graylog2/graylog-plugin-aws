@@ -1,13 +1,17 @@
 # AWS Plugin For Graylog
 
 [![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-aws.svg)](https://travis-ci.org/Graylog2/graylog-plugin-aws)
+[![Github Downloads](https://img.shields.io/github/downloads/Graylog2/graylog-plugin-aws/total.svg)](https://github.com/Graylog2/graylog-plugin-aws/releases)
+[![GitHub Release](https://img.shields.io/github/release/Graylog2/graylog-plugin-aws.svg)](https://github.com/Graylog2/graylog-plugin-aws/releases)
 
 This plugin provides the following Graylog modules:
 
 * Input plugin for [AWS Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) network interface connection logs
 * Input plugin for [AWS CloudTrail](http://aws.amazon.com/cloudtrail/) logs
 
-**Required Graylog version:** v2.1.0 and later (Please use the [v0.6 release](https://github.com/Graylog2/graylog-plugin-aws/releases/tag/0.6.0) of this plugin if you are running Graylog v2.0.x)
+**Required Graylog version:** v2.1.3 and later
+
+Please use the [version 0.6.0](https://github.com/Graylog2/graylog-plugin-aws/releases/tag/0.6.0) of this plugin if you are running Graylog 2.0.x.
 
 ## Installation
 
