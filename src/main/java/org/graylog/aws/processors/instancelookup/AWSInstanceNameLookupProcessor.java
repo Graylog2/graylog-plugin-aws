@@ -1,6 +1,5 @@
 package org.graylog.aws.processors.instancelookup;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -69,7 +68,7 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
                     LOG.debug("Refreshing AWS instance lookup table.");
 
-                    table.reload(config.getLookupRegions(), new BasicAWSCredentials(config.accessKey(), config.secretKey()));
+                    table.reload(config.getLookupRegions());
                 } catch (Exception e) {
                     LOG.error("Could not refresh AWS instance lookup table.", e);
                 }

@@ -2,7 +2,7 @@ package org.graylog.aws.inputs.flowlogs;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
@@ -58,7 +58,7 @@ public class FlowLogReader implements Runnable {
                 new AWSCredentialsProvider() {
                     @Override
                     public AWSCredentials getCredentials() {
-                        return new BasicAWSCredentials(awsConfig.accessKey(), awsConfig.secretKey());
+                        return new DefaultAWSCredentialsProviderChain().getCredentials();
                     }
 
                     @Override

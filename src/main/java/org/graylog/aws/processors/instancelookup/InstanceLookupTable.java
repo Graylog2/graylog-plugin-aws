@@ -1,6 +1,5 @@
 package org.graylog.aws.processors.instancelookup;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
@@ -43,7 +42,7 @@ public class InstanceLookupTable {
 
     private InstanceLookupTable() { /* nope */ }
 
-    public void reload(List<Regions> regions, AWSCredentials credentials) {
+    public void reload(List<Regions> regions) {
         LOG.info("Reloading AWS instance lookup table.");
 
         ImmutableMap.Builder<String, Instance> ec2InstancesBuilder = ImmutableMap.<String, Instance>builder();
@@ -51,7 +50,7 @@ public class InstanceLookupTable {
 
         for (Regions region : regions) {
             try {
-                AmazonEC2Client ec2Client = new AmazonEC2Client(credentials);
+                AmazonEC2Client ec2Client = new AmazonEC2Client();
                 ec2Client.configureRegion(region);
 
                 // Load network interfaces

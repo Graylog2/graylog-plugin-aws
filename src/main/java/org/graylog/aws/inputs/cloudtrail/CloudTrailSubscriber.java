@@ -32,17 +32,12 @@ public class CloudTrailSubscriber extends Thread {
     private final Region sqsRegion;
     private final Region s3Region;
     private final String queueName;
-    private final String accessKey;
-    private final String secretKey;
     private final HttpUrl proxyUrl;
 
-    public CloudTrailSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput,
-                                String accessKey, String secretKey, HttpUrl proxyUrl) {
+    public CloudTrailSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput, HttpUrl proxyUrl) {
         this.sqsRegion = sqsRegion;
         this.s3Region = s3Region;
         this.queueName = queueName;
-        this.accessKey = accessKey;
-        this.secretKey = secretKey;
         this.sourceInput = sourceInput;
         this.proxyUrl = proxyUrl;
     }
@@ -63,14 +58,12 @@ public class CloudTrailSubscriber extends Thread {
         CloudtrailSQSClient subscriber = new CloudtrailSQSClient(
                 sqsRegion,
                 queueName,
-                accessKey,
-                secretKey,
                 proxyUrl
         );
 
         final ObjectMapper objectMapper = new ObjectMapper();
         TreeReader reader = new TreeReader();
-        S3Reader s3Reader = new S3Reader(accessKey, secretKey);
+        S3Reader s3Reader = new S3Reader();
 
         // This looks weird but it actually makes sense! Believe me.
         while (!stopped) {
