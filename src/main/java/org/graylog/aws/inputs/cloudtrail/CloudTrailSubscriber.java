@@ -70,7 +70,7 @@ public class CloudTrailSubscriber extends Thread {
 
         final ObjectMapper objectMapper = new ObjectMapper();
         TreeReader reader = new TreeReader();
-        S3Reader s3Reader = new S3Reader(accessKey, secretKey);
+        S3Reader s3Reader = new S3Reader(s3Region, proxyUrl, accessKey, secretKey);
 
         // This looks weird but it actually makes sense! Believe me.
         while (!stopped) {
@@ -107,7 +107,6 @@ public class CloudTrailSubscriber extends Thread {
 
                         List<CloudTrailRecord> records = reader.read(
                                 s3Reader.readCompressed(
-                                        s3Region,
                                         n.getS3Bucket(),
                                         n.getS3ObjectKey()
                                 )

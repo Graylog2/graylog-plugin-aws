@@ -1,7 +1,5 @@
 package org.graylog.aws.inputs.cloudtrail.notifications;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.ClientConfigurationFactory;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
@@ -13,6 +11,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.google.common.collect.Lists;
 import okhttp3.HttpUrl;
+import org.graylog.aws.config.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,13 +27,7 @@ public class CloudtrailSQSClient {
         final AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         if(proxyUrl != null) {
-            final ClientConfiguration clientConfiguration = new ClientConfigurationFactory().getConfig()
-                    .withProxyHost(proxyUrl.host())
-                    .withProxyPort(proxyUrl.port())
-                    .withProxyUsername(proxyUrl.username())
-                    .withProxyPassword(proxyUrl.password());
-
-            this.sqs = new AmazonSQSClient(credentials, clientConfiguration);
+            this.sqs = new AmazonSQSClient(credentials, Proxy.forAWS(proxyUrl));
         } else {
             this.sqs = new AmazonSQSClient(credentials);
         }
