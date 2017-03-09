@@ -4,8 +4,10 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import okhttp3.HttpUrl;
 import org.graylog.aws.AWS;
 import org.graylog.aws.config.AWSPluginConfiguration;
+import org.graylog2.Configuration;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.Messages;
 import org.graylog2.plugin.cluster.ClusterConfigService;
@@ -47,7 +49,8 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
     @Inject
     public AWSInstanceNameLookupProcessor(ClusterConfigService clusterConfigService,
-                                          MetricRegistry metricRegistry) {
+                                          MetricRegistry metricRegistry,
+                                          Configuration configuration) {
         this.metricRegistry = metricRegistry;
         this.table = InstanceLookupTable.getInstance();
 
@@ -69,7 +72,13 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
                     LOG.debug("Refreshing AWS instance lookup table.");
 
-                    table.reload(config.getLookupRegions(), new BasicAWSCredentials(config.accessKey(), config.secretKey()));
+                    final HttpUrl proxyUrl = config.proxyEnabled() ? HttpUrl.get(configuration.getHttpProxyUri()) : null;
+
+                    table.reload(
+                            config.getLookupRegions(),
+                            new BasicAWSCredentials(config.accessKey(), config.secretKey()),
+                            proxyUrl
+                    );
                 } catch (Exception e) {
                     LOG.error("Could not refresh AWS instance lookup table.", e);
                 }

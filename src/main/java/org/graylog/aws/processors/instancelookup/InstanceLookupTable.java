@@ -13,6 +13,8 @@ import com.amazonaws.services.ec2.model.NetworkInterfacePrivateIpAddress;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.Tag;
 import com.google.common.collect.ImmutableMap;
+import okhttp3.HttpUrl;
+import org.graylog.aws.config.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +45,7 @@ public class InstanceLookupTable {
 
     private InstanceLookupTable() { /* nope */ }
 
-    public void reload(List<Regions> regions, AWSCredentials credentials) {
+    public void reload(List<Regions> regions, AWSCredentials credentials, HttpUrl proxyUrl) {
         LOG.info("Reloading AWS instance lookup table.");
 
         ImmutableMap.Builder<String, Instance> ec2InstancesBuilder = ImmutableMap.<String, Instance>builder();
@@ -51,7 +53,14 @@ public class InstanceLookupTable {
 
         for (Regions region : regions) {
             try {
-                AmazonEC2Client ec2Client = new AmazonEC2Client(credentials);
+                AmazonEC2Client ec2Client;
+
+                if(proxyUrl != null) {
+                    ec2Client = new AmazonEC2Client(credentials, Proxy.forAWS(proxyUrl));
+                } else {
+                    ec2Client = new AmazonEC2Client(credentials);
+                }
+
                 ec2Client.configureRegion(region);
 
                 // Load network interfaces
