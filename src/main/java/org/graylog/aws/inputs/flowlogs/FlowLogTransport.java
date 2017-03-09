@@ -10,6 +10,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
+import okhttp3.HttpUrl;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
@@ -46,6 +47,7 @@ public class FlowLogTransport implements Transport {
     private static final String CK_KINESIS_STREAM_NAME = "kinesis_stream_name";
 
     private final Configuration configuration;
+    private final org.graylog2.Configuration graylogConfiguration;
     private final LocalMetricRegistry localRegistry;
     private final ClusterConfigService clusterConfigService;
 
@@ -53,10 +55,12 @@ public class FlowLogTransport implements Transport {
 
     @AssistedInject
     public FlowLogTransport(@Assisted final Configuration configuration,
-                               final ClusterConfigService clusterConfigService,
-                               LocalMetricRegistry localRegistry) {
+                            org.graylog2.Configuration graylogConfiguration,
+                            final ClusterConfigService clusterConfigService,
+                            LocalMetricRegistry localRegistry) {
         this.clusterConfigService = clusterConfigService;
         this.configuration = configuration;
+        this.graylogConfiguration = graylogConfiguration;
         this.localRegistry = localRegistry;
     }
 
@@ -72,7 +76,8 @@ public class FlowLogTransport implements Transport {
                 this.configuration.getString(CK_KINESIS_STREAM_NAME),
                 Region.getRegion(Regions.fromName(this.configuration.getString(CK_AWS_REGION))),
                 input,
-                clusterConfigService
+                clusterConfigService,
+                HttpUrl.get(this.graylogConfiguration.getHttpProxyUri())
         );
 
         LOG.info("Starting FlowLogs Kinesis reader thread.");

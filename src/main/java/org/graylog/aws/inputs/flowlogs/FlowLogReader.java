@@ -14,7 +14,9 @@ import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput;
 import com.amazonaws.services.kinesis.model.Record;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.HttpUrl;
 import org.graylog.aws.config.AWSPluginConfiguration;
+import org.graylog.aws.config.Proxy;
 import org.graylog.aws.inputs.flowlogs.json.FlowLogKinesisEvent;
 import org.graylog.aws.inputs.flowlogs.json.RawFlowLog;
 import org.graylog2.plugin.Tools;
@@ -31,19 +33,23 @@ public class FlowLogReader implements Runnable {
     private final ObjectMapper objectMapper;
     private final MessageInput sourceInput;
     private final String kinesisStreamName;
-
+    private final HttpUrl proxyUrl;
     private final AWSPluginConfiguration awsConfig;
+
 
     private Worker worker;
 
     public FlowLogReader(String kinesisStreamName,
                          Region region,
                          MessageInput input,
-                         ClusterConfigService configService) {
+                         ClusterConfigService configService,
+                         HttpUrl proxyUrl) {
         this.kinesisStreamName = kinesisStreamName;
         this.region = region;
         this.sourceInput = input;
         this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        this.proxyUrl = proxyUrl;
 
         awsConfig = configService.get(AWSPluginConfiguration.class);
 
@@ -66,6 +72,11 @@ public class FlowLogReader implements Runnable {
                 },
                 "graylog-server-master")
                 .withRegionName(region.getName());
+
+        // Optional HTTP proxy
+        if(this.proxyUrl != null) {
+            config.withCommonClientConfig(Proxy.forAWS(this.proxyUrl));
+        }
 
         final IRecordProcessorFactory recordProcessorFactory = () -> new IRecordProcessor() {
             @Override
