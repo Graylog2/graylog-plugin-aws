@@ -9,7 +9,7 @@ This plugin provides the following Graylog modules:
 * Input plugin for [AWS Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) network interface connection logs
 * Input plugin for [AWS CloudTrail](http://aws.amazon.com/cloudtrail/) logs
 
-**Required Graylog version:** v2.1.3 and later
+**Required Graylog version:** v2.2.2 and later
 
 Please use the [version 0.6.0](https://github.com/Graylog2/graylog-plugin-aws/releases/tag/0.6.0) of this plugin if you are running Graylog 2.0.x.
 
