@@ -32,16 +32,21 @@ public abstract class AWSPluginConfiguration {
     @JsonProperty("secret_key")
     public abstract String secretKey();
 
+    @JsonProperty("proxy_enabled")
+    public abstract boolean proxyEnabled();
+
     @JsonCreator
     public static AWSPluginConfiguration create(@JsonProperty("lookups_enabled") boolean lookupsEnabled,
                                                 @JsonProperty("lookup_regions") String lookupRegions,
                                                 @JsonProperty("access_key") String accessKey,
-                                                @JsonProperty("secret_key") String secretKey) {
+                                                @JsonProperty("secret_key") String secretKey,
+                                                @JsonProperty("proxy_enabled") boolean proxyEnabled) {
         return builder()
                 .lookupsEnabled(lookupsEnabled)
                 .lookupRegions(lookupRegions)
                 .accessKey(accessKey)
                 .secretKey(secretKey)
+                .proxyEnabled(proxyEnabled)
                 .build();
     }
 
@@ -86,6 +91,8 @@ public abstract class AWSPluginConfiguration {
         public abstract Builder accessKey(String accessKey);
 
         public abstract Builder secretKey(String secretKey);
+
+        public abstract Builder proxyEnabled(boolean proxyEnabled);
 
         public abstract AWSPluginConfiguration build();
     }

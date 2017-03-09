@@ -14,9 +14,10 @@ const AWSPluginConfiguration = React.createClass({
         return {
             config: {
                 lookups_enabled: false,
+                proxy_enabled: false,
                 lookup_regions: 'us-east-1,us-west-1,us-west-2,eu-west-1,eu-central-1',
                 access_key: '',
-                secret_key: ''
+                secret_key: '',
             },
         };
     },
@@ -97,6 +98,9 @@ const AWSPluginConfiguration = React.createClass({
 
                     <dt>Secret Key:</dt>
                     <dd>{this.state.config.secret_key ? "***********" : "[not set]"}</dd>
+
+                    <dt>HTTP Proxy:</dt>
+                    <dd>{this.state.config.proxy_enabled === true ? 'In use' : 'Not in use'}</dd>
                 </dl>
 
                 <IfPermitted permissions="clusterconfigentry:edit">
@@ -137,6 +141,14 @@ const AWSPluginConfiguration = React.createClass({
                                name="lookup_regions"
                                value={this.state.config.lookup_regions}
                                onChange={this._onUpdate('lookup_regions')}/>
+
+                        <Input type="checkbox"
+                               ref="proxyEnabled"
+                               label="Use HTTP proxy?"
+                               help={<span>When enabled, we'll access the AWS APIs through the HTTP proxy configured (http_proxy_uri) in your Graylog configuration file.</span>}
+                               name="proxy_enabled"
+                               checked={this.state.config.proxy_enabled}
+                               onChange={this._onCheckboxClick('proxy_enabled', 'proxyEnabled')}/>
                     </fieldset>
                 </BootstrapModalForm>
             </div>

@@ -14,7 +14,6 @@ import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.cluster.ClusterConfigService;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
-import org.graylog2.plugin.configuration.fields.BooleanField;
 import org.graylog2.plugin.configuration.fields.ConfigurationField;
 import org.graylog2.plugin.configuration.fields.DropdownField;
 import org.graylog2.plugin.configuration.fields.TextField;
@@ -45,7 +44,6 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private static final String CK_AWS_SQS_REGION = "aws_sqs_region";
     private static final String CK_AWS_S3_REGION = "aws_s3_region";
     private static final String CK_SQS_NAME = "aws_sqs_queue_name";
-    private static final String CK_USE_PROXY = "use_proxy";
 
     private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
 
@@ -107,7 +105,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
         final String sqsRegionName = input.getConfiguration().getString(CK_AWS_SQS_REGION, legacyRegionName);
         final String s3RegionName = input.getConfiguration().getString(CK_AWS_S3_REGION, legacyRegionName);
 
-        final HttpUrl proxyUrl = input.getConfiguration().getBoolean(CK_USE_PROXY, false) ? HttpUrl.get(httpProxyUri) : null;
+        final HttpUrl proxyUrl = config.proxyEnabled() ? HttpUrl.get(httpProxyUri) : null;
 
         subscriber = new CloudTrailSubscriber(
                 Region.getRegion(Regions.fromName(sqsRegionName)),
@@ -178,13 +176,6 @@ public class CloudTrailTransport extends ThrottleableTransport {
                     "cloudtrail-notifications",
                     "The SQS queue that SNS is writing CloudTrail notifications to.",
                     ConfigurationField.Optional.NOT_OPTIONAL
-            ));
-
-            r.addField(new BooleanField(
-                    CK_USE_PROXY,
-                    "Use proxy server",
-                    false,
-                    "Use proxy server (see 'http_proxy_uri' in the Graylog configuration) for accessing the AWS API."
             ));
 
             return r;
