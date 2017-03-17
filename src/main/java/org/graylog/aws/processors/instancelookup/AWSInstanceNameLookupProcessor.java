@@ -72,7 +72,8 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
                     LOG.debug("Refreshing AWS instance lookup table.");
 
-                    final HttpUrl proxyUrl = config.proxyEnabled() ? HttpUrl.get(configuration.getHttpProxyUri()) : null;
+                    final HttpUrl proxyUrl = config.proxyEnabled() && configuration.getHttpProxyUri() != null
+                            ? HttpUrl.get(configuration.getHttpProxyUri()) : null;
 
                     table.reload(
                             config.getLookupRegions(),

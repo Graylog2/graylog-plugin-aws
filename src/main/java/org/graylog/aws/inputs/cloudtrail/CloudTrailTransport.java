@@ -105,7 +105,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
         final String sqsRegionName = input.getConfiguration().getString(CK_AWS_SQS_REGION, legacyRegionName);
         final String s3RegionName = input.getConfiguration().getString(CK_AWS_S3_REGION, legacyRegionName);
 
-        final HttpUrl proxyUrl = config.proxyEnabled() ? HttpUrl.get(httpProxyUri) : null;
+        final HttpUrl proxyUrl = config.proxyEnabled() && httpProxyUri != null ? HttpUrl.get(httpProxyUri) : null;
 
         subscriber = new CloudTrailSubscriber(
                 Region.getRegion(Regions.fromName(sqsRegionName)),

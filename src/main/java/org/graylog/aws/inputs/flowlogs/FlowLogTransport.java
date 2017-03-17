@@ -3,23 +3,17 @@ package org.graylog.aws.inputs.flowlogs;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.codahale.metrics.MetricSet;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import okhttp3.HttpUrl;
-import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog2.plugin.LocalMetricRegistry;
-import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.cluster.ClusterConfigService;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
 import org.graylog2.plugin.configuration.fields.ConfigurationField;
 import org.graylog2.plugin.configuration.fields.DropdownField;
-import org.graylog2.plugin.configuration.fields.NumberField;
 import org.graylog2.plugin.configuration.fields.TextField;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.inputs.MisfireException;
@@ -28,16 +22,12 @@ import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.graylog2.plugin.inputs.transports.ThrottleableTransport;
 import org.graylog2.plugin.inputs.transports.Transport;
-import org.graylog2.plugin.lifecycles.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FlowLogTransport implements Transport {
     private static final Logger LOG = LoggerFactory.getLogger(FlowLogTransport.class);
@@ -77,7 +67,7 @@ public class FlowLogTransport implements Transport {
                 Region.getRegion(Regions.fromName(this.configuration.getString(CK_AWS_REGION))),
                 input,
                 clusterConfigService,
-                HttpUrl.get(this.graylogConfiguration.getHttpProxyUri())
+                this.graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(this.graylogConfiguration.getHttpProxyUri())
         );
 
         LOG.info("Starting FlowLogs Kinesis reader thread.");

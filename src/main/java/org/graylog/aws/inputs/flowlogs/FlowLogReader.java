@@ -74,7 +74,7 @@ public class FlowLogReader implements Runnable {
                 .withRegionName(region.getName());
 
         // Optional HTTP proxy
-        if(this.proxyUrl != null) {
+        if(awsConfig.proxyEnabled() && this.proxyUrl != null) {
             config.withCommonClientConfig(Proxy.forAWS(this.proxyUrl));
         }
 
