@@ -1,8 +1,5 @@
 package org.graylog.aws.inputs.flowlogs;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
@@ -15,6 +12,7 @@ import com.amazonaws.services.kinesis.model.Record;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.HttpUrl;
+import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.config.Proxy;
 import org.graylog.aws.inputs.flowlogs.json.FlowLogKinesisEvent;
@@ -33,6 +31,7 @@ public class FlowLogReader implements Runnable {
     private final ObjectMapper objectMapper;
     private final MessageInput sourceInput;
     private final String kinesisStreamName;
+    private final AWSAuthProvider authProvider;
     private final HttpUrl proxyUrl;
     private final AWSPluginConfiguration awsConfig;
 
@@ -43,12 +42,14 @@ public class FlowLogReader implements Runnable {
                          Region region,
                          MessageInput input,
                          ClusterConfigService configService,
+                         AWSAuthProvider authProvider,
                          HttpUrl proxyUrl) {
         this.kinesisStreamName = kinesisStreamName;
         this.region = region;
         this.sourceInput = input;
         this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+        this.authProvider = authProvider;
         this.proxyUrl = proxyUrl;
 
         awsConfig = configService.get(AWSPluginConfiguration.class);
@@ -61,15 +62,7 @@ public class FlowLogReader implements Runnable {
         final KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(
                 "graylog-aws-plugin",
                 kinesisStreamName,
-                new AWSCredentialsProvider() {
-                    @Override
-                    public AWSCredentials getCredentials() {
-                        return new BasicAWSCredentials(awsConfig.accessKey(), awsConfig.secretKey());
-                    }
-
-                    @Override
-                    public void refresh() {}
-                },
+                this.authProvider,
                 "graylog-server-master")
                 .withRegionName(region.getName());
 
