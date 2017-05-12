@@ -1,15 +1,14 @@
 package org.graylog.aws.inputs.cloudtrail.notifications;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.google.common.collect.Lists;
+import org.graylog.aws.auth.AWSAuthProvider;
 import okhttp3.HttpUrl;
 import org.graylog.aws.config.Proxy;
 import org.slf4j.Logger;
@@ -23,16 +22,14 @@ public class CloudtrailSQSClient {
     private final AmazonSQS sqs;
     private final String queueName;
 
-    public CloudtrailSQSClient(Region region, String queueName, String accessKey, String secretKey, HttpUrl proxyUrl) {
-        final AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+    public CloudtrailSQSClient(Region region, String queueName, AWSAuthProvider authProvider, HttpUrl proxyUrl) {
+        AmazonSQSClientBuilder clientBuilder = AmazonSQSClientBuilder.standard().withRegion(region.getName()).withCredentials(authProvider);
 
         if(proxyUrl != null) {
-            this.sqs = new AmazonSQSClient(credentials, Proxy.forAWS(proxyUrl));
-        } else {
-            this.sqs = new AmazonSQSClient(credentials);
+            clientBuilder.withClientConfiguration(Proxy.forAWS(proxyUrl));
         }
 
-        this.sqs.setRegion(region);
+        this.sqs = clientBuilder.build();
 
         this.queueName = queueName;
     }
