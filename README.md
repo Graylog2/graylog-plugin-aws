@@ -142,8 +142,6 @@ Create a new file called _permissions.json_ and set both ARNs to the ARNs your c
 }
 ```
 
-**Make sure to change the AWS regions here if necessary, too.**
-
 Now attach this role:
 
     aws iam put-role-policy --role-name CWLtoKinesisRole --policy-name Permissions-Policy-For-CWL --policy-document file://permissions.json
