@@ -131,12 +131,12 @@ Create a new file called _permissions.json_ and set both ARNs to the ARNs your c
     {
       "Effect": "Allow",
       "Action": "kinesis:PutRecord",
-      "Resource": "arn:aws:kinesis:eu-west-1:[YOUR KINESIS STREAM ARN HERE]:stream/flowlogs"
+      "Resource": "[YOUR KINESIS STREAM ARN HERE]"
     },
     {
       "Effect": "Allow",
       "Action": "iam:PassRole",
-      "Resource": "arn:aws:iam::[YOUR IAM ARN HERE]:role/CWLtoKinesisRole"
+      "Resource": "[YOUR IAM ARN HERE]"
     }
   ]
 }
