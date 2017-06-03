@@ -163,7 +163,33 @@ You should now see FlowLogs being written into your Kinesis stream.
 
 Now go into the Graylog Web Interface and start a new *AWS FlowLogs input*. It will ask you for some simple parameters like the Kinesis Stream name you are writing your FlowLogs to.
 
-**Important: AWS delivers the FlowLogs with a few minutes delay and not always in an ordered fashion. Keep this in mind when searching over messages in a recent time frame.*
+You should see something like this in your `graylog-server` log file after starting the input:
+
+```
+2017-06-03T15:22:43.376Z INFO  [InputStateListener] Input [AWS FlowLogs Input/5932d443bb4feb3768b2fe6f] is now STARTING
+2017-06-03T15:22:43.404Z INFO  [FlowLogReader] Starting AWS FlowLog reader.
+2017-06-03T15:22:43.404Z INFO  [FlowLogTransport] Starting FlowLogs Kinesis reader thread.
+2017-06-03T15:22:43.410Z INFO  [InputStateListener] Input [AWS FlowLogs Input/5932d443bb4feb3768b2fe6f] is now RUNNING
+2017-06-03T15:22:43.509Z INFO  [LeaseCoordinator] With failover time 10000 ms and epsilon 25 ms, LeaseCoordinator will renew leases every 3308 ms, takeleases every 20050 ms, process maximum of 2147483647 leases and steal 1 lease(s) at a time.
+2017-06-03T15:22:43.510Z INFO  [Worker] Initialization attempt 1
+2017-06-03T15:22:43.511Z INFO  [Worker] Initializing LeaseCoordinator
+2017-06-03T15:22:44.060Z INFO  [KinesisClientLibLeaseCoordinator] Created new lease table for coordinator with initial read capacity of 10 and write capacity of 10.
+2017-06-03T15:22:54.251Z INFO  [Worker] Syncing Kinesis shard info
+2017-06-03T15:22:55.077Z INFO  [Worker] Starting LeaseCoordinator
+2017-06-03T15:22:55.279Z INFO  [LeaseTaker] Worker graylog-server-master saw 1 total leases, 1 available leases, 1 workers. Target is 1 leases, I have 0 leases, I will take 1 leases
+2017-06-03T15:22:55.375Z INFO  [LeaseTaker] Worker graylog-server-master successfully took 1 leases: shardId-000000000000
+2017-06-03T15:23:05.178Z INFO  [Worker] Initialization complete. Starting worker loop.
+2017-06-03T15:23:05.203Z INFO  [Worker] Created new shardConsumer for : ShardInfo [shardId=shardId-000000000000, concurrencyToken=9f6910f6-4725-3464e7e54251, parentShardIds=[], checkpoint={SequenceNumber: LATEST,SubsequenceNumber: 0}]
+2017-06-03T15:23:05.204Z INFO  [BlockOnParentShardTask] No need to block on parents [] of shard shardId-000000000000
+2017-06-03T15:23:06.300Z INFO  [KinesisDataFetcher] Initializing shard shardId-000000000000 with LATEST
+2017-06-03T15:23:06.719Z INFO  [FlowLogReader] Initializing Kinesis worker.
+2017-06-03T15:23:44.277Z INFO  [Worker] Current stream shard assignments: shardId-000000000000
+2017-06-03T15:23:44.277Z INFO  [Worker] Sleeping ...
+```
+
+**It will take a few minutes until the first logs are coming in.**
+
+**Important: AWS delivers the FlowLogs with a few minutes delay and not always in an ordered fashion. Keep this in mind when searching over messages in a recent time frame.**
 
 ## CloudTrail setup and configuration
 
