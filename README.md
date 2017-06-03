@@ -153,8 +153,8 @@ aws logs put-subscription-filter \
     --filter-name "MatchAllValidFilter" \
     --filter-pattern "OK" \
     --log-group-name "my-flowlogs" \
-    --destination-arn "arn:aws:kinesis:eu-west-1:123456789:stream/flowlogs" \
-    --role-arn "arn:aws:iam::123456789012:role/CWLtoKinesisRole"
+    --destination-arn "[YOUR KINESIS STREAM ARN HERE]" \
+    --role-arn "[YOUR IAM ARN HERE]"
 ```
 
 You should now see FlowLogs being written into your Kinesis stream.
