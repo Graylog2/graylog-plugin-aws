@@ -1,12 +1,12 @@
 package org.graylog.aws.s3;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3Object;
 import okhttp3.HttpUrl;
 import org.apache.commons.io.IOUtils;
+import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.Proxy;
 import org.graylog2.plugin.Tools;
 
@@ -14,18 +14,16 @@ import java.io.IOException;
 
 public class S3Reader {
 
-    private final AmazonS3Client client;
+    private final AmazonS3 client;
 
-    public S3Reader(Region region, HttpUrl proxyUrl, String accessKey, String secretKey) {
-        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+    public S3Reader(Region region, HttpUrl proxyUrl, AWSAuthProvider authProvider) {
+        AmazonS3ClientBuilder clientBuilder = AmazonS3ClientBuilder.standard().withRegion(region.getName()).withCredentials(authProvider);
 
         if(proxyUrl != null) {
-            this.client = new AmazonS3Client(credentials, Proxy.forAWS(proxyUrl));
-        } else {
-            this.client = new AmazonS3Client(credentials);
+            clientBuilder.withClientConfiguration(Proxy.forAWS(proxyUrl));
         }
 
-        this.client.setRegion(region);
+        this.client = clientBuilder.build();
     }
 
     public String readCompressed(String bucket, String key) throws IOException {

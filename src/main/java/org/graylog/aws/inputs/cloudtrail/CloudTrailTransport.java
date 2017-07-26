@@ -8,6 +8,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import okhttp3.HttpUrl;
+import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
@@ -44,6 +45,8 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private static final String CK_AWS_SQS_REGION = "aws_sqs_region";
     private static final String CK_AWS_S3_REGION = "aws_s3_region";
     private static final String CK_SQS_NAME = "aws_sqs_queue_name";
+    private static final String CK_ACCESS_KEY = "aws_access_key";
+    private static final String CK_SECRET_KEY = "aws_secret_key";
 
     private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
 
@@ -107,13 +110,18 @@ public class CloudTrailTransport extends ThrottleableTransport {
 
         final HttpUrl proxyUrl = config.proxyEnabled() && httpProxyUri != null ? HttpUrl.get(httpProxyUri) : null;
 
+        final AWSAuthProvider authProvider = new AWSAuthProvider(
+                config,
+                input.getConfiguration().getString(CK_ACCESS_KEY),
+                input.getConfiguration().getString(CK_SECRET_KEY)
+        );
+
         subscriber = new CloudTrailSubscriber(
                 Region.getRegion(Regions.fromName(sqsRegionName)),
                 Region.getRegion(Regions.fromName(s3RegionName)),
                 input.getConfiguration().getString(CK_SQS_NAME),
                 input,
-                config.accessKey(),
-                config.secretKey(),
+                authProvider,
                 proxyUrl
         );
 
@@ -177,6 +185,22 @@ public class CloudTrailTransport extends ThrottleableTransport {
                     "The SQS queue that SNS is writing CloudTrail notifications to.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
+
+            r.addField(new TextField(
+                    CK_ACCESS_KEY,
+                    "AWS access key",
+                    "",
+                    "Access key of an AWS user with sufficient permissions. (See documentation)",
+                    ConfigurationField.Optional.OPTIONAL
+            ));
+            r.addField(new TextField(
+                    CK_SECRET_KEY,
+                    "AWS secret key",
+                    "",
+                    "Secret key of an AWS user with sufficient permissions. (See documentation)",
+                    ConfigurationField.Optional.OPTIONAL,
+                    TextField.Attribute.IS_PASSWORD
+             ));
 
             return r;
         }

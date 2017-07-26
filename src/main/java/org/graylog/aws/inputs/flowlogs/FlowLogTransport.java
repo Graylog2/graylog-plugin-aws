@@ -8,6 +8,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import okhttp3.HttpUrl;
+import org.graylog.aws.auth.AWSAuthProvider;
+import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.cluster.ClusterConfigService;
 import org.graylog2.plugin.configuration.Configuration;
@@ -34,6 +36,8 @@ public class FlowLogTransport implements Transport {
     public static final String NAME = "flowlog";
 
     private static final String CK_AWS_REGION = "aws_region";
+    private static final String CK_ACCESS_KEY = "aws_access_key";
+    private static final String CK_SECRET_KEY = "aws_secret_key";
     private static final String CK_KINESIS_STREAM_NAME = "kinesis_stream_name";
 
     private final Configuration configuration;
@@ -62,11 +66,15 @@ public class FlowLogTransport implements Transport {
                 .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS FlowLogs reader.", e))
                 .build());
 
+        AWSPluginConfiguration awsConfig = clusterConfigService.get(AWSPluginConfiguration.class);
+        AWSAuthProvider authProvider = new AWSAuthProvider(awsConfig, this.configuration.getString(CK_ACCESS_KEY), this.configuration.getString(CK_SECRET_KEY));
+
         this.reader = new FlowLogReader(
                 this.configuration.getString(CK_KINESIS_STREAM_NAME),
                 Region.getRegion(Regions.fromName(this.configuration.getString(CK_AWS_REGION))),
                 input,
                 clusterConfigService,
+                authProvider,
                 this.graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(this.graylogConfiguration.getHttpProxyUri())
         );
 
@@ -119,6 +127,23 @@ public class FlowLogTransport implements Transport {
                     regions,
                     "The AWS region the FlowLogs are stored in.",
                     ConfigurationField.Optional.NOT_OPTIONAL
+            ));
+
+            r.addField(new TextField(
+                    CK_ACCESS_KEY,
+                    "AWS access key",
+                    "",
+                    "Access key of an AWS user with sufficient permissions. (See documentation)",
+                    ConfigurationField.Optional.OPTIONAL
+            ));
+
+            r.addField(new TextField(
+                    CK_SECRET_KEY,
+                    "AWS secret key",
+                    "",
+                    "Secret key of an AWS user with sufficient permissions. (See documentation)",
+                    ConfigurationField.Optional.OPTIONAL,
+                    TextField.Attribute.IS_PASSWORD
             ));
 
             r.addField(new TextField(
