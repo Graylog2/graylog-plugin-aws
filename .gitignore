@@ -16,3 +16,4 @@ pom.xml.versionsBackup
 node_modules/
 node/
 build/
+cache/
