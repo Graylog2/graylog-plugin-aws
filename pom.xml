@@ -9,6 +9,7 @@
         <groupId>org.graylog.plugins</groupId>
         <artifactId>graylog-plugin-web-parent</artifactId>
         <version>2.3.0</version>
+        <relativePath>../graylog2-server/graylog-plugin-parent/graylog-plugin-web-parent</relativePath>
     </parent>
 
     <artifactId>graylog-plugin-aws</artifactId>
@@ -16,7 +17,7 @@
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
-    <description>Graylog ${project.artifactId} plugin.</description>
+    <description>Graylog AWS plugin.</description>
     <url>https://www.graylog.org</url>
 
     <scm>
