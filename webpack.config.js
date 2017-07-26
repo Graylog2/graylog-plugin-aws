@@ -2,11 +2,7 @@ const PluginWebpackConfig = require('graylog-web-plugin').PluginWebpackConfig;
 const loadBuildConfig = require('graylog-web-plugin').loadBuildConfig;
 const path = require('path');
 
-module.exports = new PluginWebpackConfig('org.graylog.aws.plugin.AWSPlugin', loadBuildConfig(path.resolve(__dirname, './build.config')), {
-    loaders: [
-        { test: /\.ts$/, loader: 'babel-loader!ts-loader', exclude: /node_modules|\.node_cache/ },
-    ],
-    resolve: {
-        extensions: ['.ts'],
-    },
+// Remember to use the same name here and in `getUniqueId()` in the java MetaData class
+module.exports = new PluginWebpackConfig('org.graylog.plugins.auth.sso.SsoAuthPlugin', loadBuildConfig(path.resolve(__dirname, './build.config')), {
+  // Here goes your additional webpack configuration.
 });
