@@ -17,3 +17,4 @@ node_modules/
 node/
 build/
 cache/
+.DS_Store
