@@ -50,6 +50,16 @@ public abstract class AWSPluginConfiguration {
                 .build();
     }
 
+    public static AWSPluginConfiguration createDefault() {
+        return builder()
+                .lookupsEnabled(false)
+                .lookupRegions("")
+                .accessKey("")
+                .secretKey("")
+                .proxyEnabled(false)
+                .build();
+    }
+
     public static Builder builder() {
         return new AutoValue_AWSPluginConfiguration.Builder();
     }

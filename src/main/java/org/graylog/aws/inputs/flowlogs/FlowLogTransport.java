@@ -66,7 +66,8 @@ public class FlowLogTransport implements Transport {
                 .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS FlowLogs reader.", e))
                 .build());
 
-        AWSPluginConfiguration awsConfig = clusterConfigService.get(AWSPluginConfiguration.class);
+        final AWSPluginConfiguration awsConfig = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
+                AWSPluginConfiguration.createDefault());
         AWSAuthProvider authProvider = new AWSAuthProvider(awsConfig, this.configuration.getString(CK_ACCESS_KEY), this.configuration.getString(CK_SECRET_KEY));
 
         this.reader = new FlowLogReader(

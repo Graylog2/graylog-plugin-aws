@@ -99,7 +99,8 @@ public class CloudTrailTransport extends ThrottleableTransport {
     public void doLaunch(MessageInput input) throws MisfireException {
         serverStatus.awaitRunning(() -> lifecycleStateChange(Lifecycle.RUNNING));
 
-        AWSPluginConfiguration config = clusterConfigService.get(AWSPluginConfiguration.class);
+        final AWSPluginConfiguration config = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
+                AWSPluginConfiguration.createDefault());
 
         LOG.info("Starting cloud trail subscriber");
 
