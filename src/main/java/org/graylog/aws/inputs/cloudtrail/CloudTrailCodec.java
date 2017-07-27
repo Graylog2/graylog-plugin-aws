@@ -2,7 +2,6 @@ package org.graylog.aws.inputs.cloudtrail;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
-import com.google.inject.assistedinject.AssistedInject;
 import org.graylog.aws.AWS;
 import org.graylog.aws.inputs.cloudtrail.json.CloudTrailRecord;
 import org.graylog2.plugin.Message;
@@ -19,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
 public class CloudTrailCodec implements Codec {
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailCodec.class);
@@ -27,7 +27,7 @@ public class CloudTrailCodec implements Codec {
     private final Configuration configuration;
     private final ObjectMapper objectMapper;
 
-    @AssistedInject
+    @Inject
     public CloudTrailCodec(@Assisted Configuration configuration, ObjectMapper objectMapper) {
         this.configuration = configuration;
         this.objectMapper = objectMapper;

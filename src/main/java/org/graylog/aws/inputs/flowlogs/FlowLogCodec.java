@@ -2,7 +2,6 @@ package org.graylog.aws.inputs.flowlogs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
-import com.google.inject.assistedinject.AssistedInject;
 import org.graylog.aws.AWS;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
@@ -18,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +30,7 @@ public class FlowLogCodec implements Codec {
 
     private final IANAProtocolNumbers protocolNumbers;
 
-    @AssistedInject
+    @Inject
     public FlowLogCodec(@Assisted Configuration configuration, ObjectMapper objectMapper) {
         this.configuration = configuration;
         this.objectMapper = objectMapper;

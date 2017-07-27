@@ -6,7 +6,6 @@ import com.codahale.metrics.MetricSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.assistedinject.Assisted;
-import com.google.inject.assistedinject.AssistedInject;
 import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
@@ -30,9 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.inject.Named;
 import java.net.URI;
-
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -57,7 +56,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
 
     private CloudTrailSubscriber subscriber;
 
-    @AssistedInject
+    @Inject
     public CloudTrailTransport(@Assisted final Configuration configuration,
                                final ClusterConfigService clusterConfigService,
                                final EventBus serverEventBus,

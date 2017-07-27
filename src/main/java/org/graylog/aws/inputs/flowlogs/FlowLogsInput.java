@@ -1,9 +1,7 @@
 package org.graylog.aws.inputs.flowlogs;
 
 import com.codahale.metrics.MetricRegistry;
-import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.google.inject.assistedinject.AssistedInject;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.configuration.Configuration;
@@ -11,10 +9,12 @@ import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.inputs.annotations.ConfigClass;
 import org.graylog2.plugin.inputs.annotations.FactoryClass;
 
+import javax.inject.Inject;
+
 public class FlowLogsInput extends MessageInput {
     private static final String NAME = "AWS FlowLogs Input";
 
-    @AssistedInject
+    @Inject
     public FlowLogsInput(@Assisted Configuration configuration,
                            MetricRegistry metricRegistry,
                            FlowLogTransport.Factory transport,
@@ -48,7 +48,6 @@ public class FlowLogsInput extends MessageInput {
     }
 
     public static class Descriptor extends MessageInput.Descriptor {
-        @Inject
         public Descriptor() {
             super(NAME, false, "");
         }

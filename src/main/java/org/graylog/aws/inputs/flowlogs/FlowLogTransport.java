@@ -6,7 +6,6 @@ import com.codahale.metrics.MetricSet;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
-import com.google.inject.assistedinject.AssistedInject;
 import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
@@ -27,6 +26,7 @@ import org.graylog2.plugin.inputs.transports.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +47,7 @@ public class FlowLogTransport implements Transport {
 
     private FlowLogReader reader;
 
-    @AssistedInject
+    @Inject
     public FlowLogTransport(@Assisted final Configuration configuration,
                             org.graylog2.Configuration graylogConfiguration,
                             final ClusterConfigService clusterConfigService,
