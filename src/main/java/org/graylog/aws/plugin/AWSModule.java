@@ -4,7 +4,7 @@ import org.graylog.aws.inputs.cloudtrail.CloudTrailInput;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailTransport;
 import org.graylog.aws.inputs.flowlogs.FlowLogCodec;
-import org.graylog.aws.inputs.flowlogs.FlowLogTransport;
+import org.graylog.aws.inputs.cloudwatchlogs.CloudwatchLogsTransport;
 import org.graylog.aws.inputs.flowlogs.FlowLogsInput;
 import org.graylog.aws.processors.instancelookup.AWSInstanceNameLookupProcessor;
 import org.graylog2.plugin.PluginModule;
@@ -19,7 +19,7 @@ public class AWSModule extends PluginModule {
 
         // FlowLog input
         addCodec(FlowLogCodec.NAME, FlowLogCodec.class);
-        addTransport(FlowLogTransport.NAME, FlowLogTransport.class);
+        addTransport(CloudwatchLogsTransport.NAME, CloudwatchLogsTransport.class);
         addMessageInput(FlowLogsInput.class);
 
         // Instance name lookup

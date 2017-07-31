@@ -1,4 +1,4 @@
-package org.graylog.aws.inputs.flowlogs;
+package org.graylog.aws.inputs.cloudwatchlogs;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
@@ -31,9 +31,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class FlowLogTransport implements Transport {
-    private static final Logger LOG = LoggerFactory.getLogger(FlowLogTransport.class);
-    public static final String NAME = "flowlog";
+public class CloudwatchLogsTransport implements Transport {
+    private static final Logger LOG = LoggerFactory.getLogger(CloudwatchLogsTransport.class);
+    public static final String NAME = "cloudwatchlogs";
 
     private static final String CK_AWS_REGION = "aws_region";
     private static final String CK_ACCESS_KEY = "aws_access_key";
@@ -45,13 +45,13 @@ public class FlowLogTransport implements Transport {
     private final LocalMetricRegistry localRegistry;
     private final ClusterConfigService clusterConfigService;
 
-    private FlowLogReader reader;
+    private CloudwatchLogsReader reader;
 
     @Inject
-    public FlowLogTransport(@Assisted final Configuration configuration,
-                            org.graylog2.Configuration graylogConfiguration,
-                            final ClusterConfigService clusterConfigService,
-                            LocalMetricRegistry localRegistry) {
+    public CloudwatchLogsTransport(@Assisted final Configuration configuration,
+                                   org.graylog2.Configuration graylogConfiguration,
+                                   final ClusterConfigService clusterConfigService,
+                                   LocalMetricRegistry localRegistry) {
         this.clusterConfigService = clusterConfigService;
         this.configuration = configuration;
         this.graylogConfiguration = graylogConfiguration;
@@ -62,15 +62,15 @@ public class FlowLogTransport implements Transport {
     public void launch(MessageInput input) throws MisfireException {
         ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
                 .setDaemon(true)
-                .setNameFormat("aws-flowlog-reader-%d")
-                .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS FlowLogs reader.", e))
+                .setNameFormat("aws-cloudwatchlogs-reader-%d")
+                .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS Cloudwatch Logs reader.", e))
                 .build());
 
         final AWSPluginConfiguration awsConfig = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
                 AWSPluginConfiguration.createDefault());
         AWSAuthProvider authProvider = new AWSAuthProvider(awsConfig, this.configuration.getString(CK_ACCESS_KEY), this.configuration.getString(CK_SECRET_KEY));
 
-        this.reader = new FlowLogReader(
+        this.reader = new CloudwatchLogsReader(
                 this.configuration.getString(CK_KINESIS_STREAM_NAME),
                 Region.getRegion(Regions.fromName(this.configuration.getString(CK_AWS_REGION))),
                 input,
@@ -79,7 +79,7 @@ public class FlowLogTransport implements Transport {
                 this.graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(this.graylogConfiguration.getHttpProxyUri())
         );
 
-        LOG.info("Starting FlowLogs Kinesis reader thread.");
+        LOG.info("Starting Cloudwatch Logs Kinesis reader thread.");
 
         executor.submit(this.reader);
     }
@@ -102,9 +102,9 @@ public class FlowLogTransport implements Transport {
     }
 
     @FactoryClass
-    public interface Factory extends Transport.Factory<FlowLogTransport> {
+    public interface Factory extends Transport.Factory<CloudwatchLogsTransport> {
         @Override
-        FlowLogTransport create(Configuration configuration);
+        CloudwatchLogsTransport create(Configuration configuration);
 
         @Override
         Config getConfig();
@@ -126,7 +126,7 @@ public class FlowLogTransport implements Transport {
                     "AWS Region",
                     Regions.US_EAST_1.getName(),
                     regions,
-                    "The AWS region the FlowLogs are stored in.",
+                    "The AWS region to read from.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
 
@@ -151,7 +151,7 @@ public class FlowLogTransport implements Transport {
                     CK_KINESIS_STREAM_NAME,
                     "Kinesis Stream name",
                     "",
-                    "The name of the Kinesis Stream that receives your FlowLog messages. See README for instructions on how to connect FlowLogs to a Kinesis Stream.",
+                    "The name of the Kinesis Stream that receives your Cloudwatch log messages. See README for instructions on how to connect FlowLogs or generic Cloudwatch Logs to a Kinesis Stream.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
 

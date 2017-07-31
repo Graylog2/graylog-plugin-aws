@@ -1,4 +1,4 @@
-package org.graylog.aws.inputs.flowlogs;
+package org.graylog.aws.inputs.cloudwatchlogs;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor;
@@ -15,8 +15,8 @@ import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.config.Proxy;
-import org.graylog.aws.inputs.flowlogs.json.FlowLogKinesisEvent;
-import org.graylog.aws.inputs.flowlogs.json.RawFlowLog;
+import org.graylog.aws.inputs.cloudwatchlogs.json.CloudwatchLogsKinesisEvent;
+import org.graylog.aws.inputs.cloudwatchlogs.json.CloudwatchLogsRawLog;
 import org.graylog2.plugin.Tools;
 import org.graylog2.plugin.cluster.ClusterConfigService;
 import org.graylog2.plugin.inputs.MessageInput;
@@ -24,8 +24,8 @@ import org.graylog2.plugin.journal.RawMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FlowLogReader implements Runnable {
-    private static final Logger LOG = LoggerFactory.getLogger(FlowLogReader.class);
+public class CloudwatchLogsReader implements Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(CloudwatchLogsReader.class);
 
     private final Region region;
     private final ObjectMapper objectMapper;
@@ -38,12 +38,12 @@ public class FlowLogReader implements Runnable {
 
     private Worker worker;
 
-    public FlowLogReader(String kinesisStreamName,
-                         Region region,
-                         MessageInput input,
-                         ClusterConfigService configService,
-                         AWSAuthProvider authProvider,
-                         HttpUrl proxyUrl) {
+    public CloudwatchLogsReader(String kinesisStreamName,
+                                Region region,
+                                MessageInput input,
+                                ClusterConfigService configService,
+                                AWSAuthProvider authProvider,
+                                HttpUrl proxyUrl) {
         this.kinesisStreamName = kinesisStreamName;
         this.region = region;
         this.sourceInput = input;
@@ -54,7 +54,7 @@ public class FlowLogReader implements Runnable {
 
         awsConfig = configService.get(AWSPluginConfiguration.class);
 
-        LOG.info("Starting AWS FlowLog reader.");
+        LOG.info("Starting AWS Cloudwatch Logs reader.");
     }
 
     // TODO metrics
@@ -81,15 +81,15 @@ public class FlowLogReader implements Runnable {
             public void processRecords(ProcessRecordsInput processRecordsInput) {
                 for (Record record : processRecordsInput.getRecords()) {
                     try {
-                        LOG.debug("Received FlowLog events via Kinesis.");
+                        LOG.debug("Received Cloudwatch Logs events via Kinesis.");
 
-                        FlowLogKinesisEvent event = objectMapper.readValue(Tools.decompressGzip(record.getData().array()), FlowLogKinesisEvent.class);
-                        for(RawFlowLog flowlog : event.logEvents) {
+                        CloudwatchLogsKinesisEvent event = objectMapper.readValue(Tools.decompressGzip(record.getData().array()), CloudwatchLogsKinesisEvent.class);
+                        for(CloudwatchLogsRawLog flowlog : event.logEvents) {
                             String fullMessage = flowlog.timestamp + " " + flowlog.message;
                             sourceInput.processRawMessage(new RawMessage(fullMessage.getBytes()));
                         }
                     } catch(Exception e) {
-                        LOG.error("Could not read FlowLog record from Kinesis stream.", e);
+                        LOG.error("Could not read Cloudwatch Logs record from Kinesis stream.", e);
                     }
                 }
             }

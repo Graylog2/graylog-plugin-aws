@@ -2,6 +2,7 @@ package org.graylog.aws.inputs.flowlogs;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.assistedinject.Assisted;
+import org.graylog.aws.inputs.cloudwatchlogs.CloudwatchLogsTransport;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.configuration.Configuration;
@@ -17,7 +18,7 @@ public class FlowLogsInput extends MessageInput {
     @Inject
     public FlowLogsInput(@Assisted Configuration configuration,
                            MetricRegistry metricRegistry,
-                           FlowLogTransport.Factory transport,
+                           CloudwatchLogsTransport.Factory transport,
                            LocalMetricRegistry localRegistry,
                            FlowLogCodec.Factory codec,
                            Config config,
@@ -56,7 +57,7 @@ public class FlowLogsInput extends MessageInput {
     @ConfigClass
     public static class Config extends MessageInput.Config {
         @Inject
-        public Config(FlowLogTransport.Factory transport, FlowLogCodec.Factory codec) {
+        public Config(CloudwatchLogsTransport.Factory transport, FlowLogCodec.Factory codec) {
             super(transport.getConfig(), codec.getConfig());
         }
     }
