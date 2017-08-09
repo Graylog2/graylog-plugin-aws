@@ -1,4 +1,4 @@
-package org.graylog.aws.inputs.flowlogs;
+package org.graylog.aws.inputs.transports;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
@@ -9,6 +9,7 @@ import com.google.inject.assistedinject.Assisted;
 import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
+import org.graylog.aws.kinesis.KinesisConsumer;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.cluster.ClusterConfigService;
 import org.graylog2.plugin.configuration.Configuration;
@@ -23,6 +24,8 @@ import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.graylog2.plugin.inputs.transports.ThrottleableTransport;
 import org.graylog2.plugin.inputs.transports.Transport;
+import org.graylog2.plugin.journal.RawMessage;
+import org.graylog2.plugin.system.NodeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +33,11 @@ import javax.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
-public class FlowLogTransport implements Transport {
-    private static final Logger LOG = LoggerFactory.getLogger(FlowLogTransport.class);
-    public static final String NAME = "flowlog";
+public class KinesisTransport implements Transport {
+    private static final Logger LOG = LoggerFactory.getLogger(KinesisTransport.class);
+    public static final String NAME = "awskinesis";
 
     private static final String CK_AWS_REGION = "aws_region";
     private static final String CK_ACCESS_KEY = "aws_access_key";
@@ -42,19 +46,22 @@ public class FlowLogTransport implements Transport {
 
     private final Configuration configuration;
     private final org.graylog2.Configuration graylogConfiguration;
+    private final NodeId nodeId;
     private final LocalMetricRegistry localRegistry;
     private final ClusterConfigService clusterConfigService;
 
-    private FlowLogReader reader;
+    private KinesisConsumer reader;
 
     @Inject
-    public FlowLogTransport(@Assisted final Configuration configuration,
+    public KinesisTransport(@Assisted final Configuration configuration,
                             org.graylog2.Configuration graylogConfiguration,
                             final ClusterConfigService clusterConfigService,
+                            final NodeId nodeId,
                             LocalMetricRegistry localRegistry) {
         this.clusterConfigService = clusterConfigService;
         this.configuration = configuration;
         this.graylogConfiguration = graylogConfiguration;
+        this.nodeId = nodeId;
         this.localRegistry = localRegistry;
     }
 
@@ -62,26 +69,31 @@ public class FlowLogTransport implements Transport {
     public void launch(MessageInput input) throws MisfireException {
         ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
                 .setDaemon(true)
-                .setNameFormat("aws-flowlog-reader-%d")
-                .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS FlowLogs reader.", e))
+                .setNameFormat("aws-kinesis-reader-%d")
+                .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS Kinesis reader.", e))
                 .build());
 
         final AWSPluginConfiguration awsConfig = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
                 AWSPluginConfiguration.createDefault());
-        AWSAuthProvider authProvider = new AWSAuthProvider(awsConfig, this.configuration.getString(CK_ACCESS_KEY), this.configuration.getString(CK_SECRET_KEY));
+        AWSAuthProvider authProvider = new AWSAuthProvider(awsConfig, configuration.getString(CK_ACCESS_KEY), configuration.getString(CK_SECRET_KEY));
 
-        this.reader = new FlowLogReader(
-                this.configuration.getString(CK_KINESIS_STREAM_NAME),
-                Region.getRegion(Regions.fromName(this.configuration.getString(CK_AWS_REGION))),
-                input,
-                clusterConfigService,
+        this.reader = new KinesisConsumer(
+                configuration.getString(CK_KINESIS_STREAM_NAME),
+                Region.getRegion(Regions.fromName(configuration.getString(CK_AWS_REGION))),
+                kinesisCallback(input),
+                awsConfig,
                 authProvider,
-                this.graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(this.graylogConfiguration.getHttpProxyUri())
+                nodeId,
+                graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(graylogConfiguration.getHttpProxyUri())
         );
 
-        LOG.info("Starting FlowLogs Kinesis reader thread.");
+        LOG.info("Starting Kinesis reader thread for input [{}/{}]", input.getName(), input.getId());
 
         executor.submit(this.reader);
+    }
+
+    private Consumer<byte[]> kinesisCallback(final MessageInput input) {
+        return (data) -> input.processRawMessage(new RawMessage(data));
     }
 
     @Override
@@ -102,9 +114,9 @@ public class FlowLogTransport implements Transport {
     }
 
     @FactoryClass
-    public interface Factory extends Transport.Factory<FlowLogTransport> {
+    public interface Factory extends Transport.Factory<KinesisTransport> {
         @Override
-        FlowLogTransport create(Configuration configuration);
+        KinesisTransport create(Configuration configuration);
 
         @Override
         Config getConfig();
@@ -126,7 +138,7 @@ public class FlowLogTransport implements Transport {
                     "AWS Region",
                     Regions.US_EAST_1.getName(),
                     regions,
-                    "The AWS region the FlowLogs are stored in.",
+                    "The AWS region the Kinesis stream is running in.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
 
@@ -151,7 +163,7 @@ public class FlowLogTransport implements Transport {
                     CK_KINESIS_STREAM_NAME,
                     "Kinesis Stream name",
                     "",
-                    "The name of the Kinesis Stream that receives your FlowLog messages. See README for instructions on how to connect FlowLogs to a Kinesis Stream.",
+                    "The name of the Kinesis stream that receives your messages. See README for instructions on how to connect messages to a Kinesis Stream.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
 

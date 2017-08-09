@@ -1,8 +1,10 @@
-package org.graylog.aws.inputs.flowlogs;
+package org.graylog.aws.cloudwatch;
 
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 public class FlowLogMessage {
     private static final Logger LOG = LoggerFactory.getLogger(FlowLogMessage.class);
@@ -55,26 +57,31 @@ public class FlowLogMessage {
         this.logStatus = logStatus;
     }
 
-    public static FlowLogMessage fromParts(String[] parts) {
-        if(parts == null || parts.length != 15) {
-            throw new IllegalArgumentException("Message parts were null or not length of 15");
+    @Nullable
+    public static FlowLogMessage fromLogEvent(final CloudWatchLogEvent logEvent) {
+        final String[] parts = logEvent.message.split(" ");
+
+        if (parts.length != 14) {
+            LOG.warn("Received FlowLog message with not exactly 14 fields. Skipping. Message was: [{}]", logEvent.message);
+            return null;
         }
+
         return new FlowLogMessage(
-                new DateTime(Long.valueOf(parts[0])),
-                safeInteger(parts[1]),
+                new DateTime(Long.valueOf(logEvent.timestamp)),
+                safeInteger(parts[0]),
+                parts[1],
                 parts[2],
                 parts[3],
                 parts[4],
-                parts[5],
+                safeInteger(parts[5]),
                 safeInteger(parts[6]),
                 safeInteger(parts[7]),
-                safeInteger(parts[8]),
+                safeLong(parts[8]),
                 safeLong(parts[9]),
-                safeLong(parts[10]),
+                new DateTime(Long.valueOf(parts[10])*1000),
                 new DateTime(Long.valueOf(parts[11])*1000),
-                new DateTime(Long.valueOf(parts[12])*1000),
-                parts[13],
-                parts[14]
+                parts[12],
+                parts[13]
         );
     }
 
