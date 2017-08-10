@@ -58,7 +58,10 @@ public class KinesisConsumer implements Runnable {
     public void run() {
         final String workerId = String.format(Locale.ENGLISH, "graylog-node-%s", nodeId.anonymize());
         final KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(
-                "graylog-aws-plugin",
+                // The application name needs to be unique per input. Using the same name for two different Kinesis
+                // streams will cause trouble with state handling in DynamoDB. (used by the Kinesis client under the
+                // hood to keep state)
+                String.format(Locale.ENGLISH, "graylog-aws-plugin-%s", kinesisStreamName),
                 kinesisStreamName,
                 authProvider,
                 workerId
