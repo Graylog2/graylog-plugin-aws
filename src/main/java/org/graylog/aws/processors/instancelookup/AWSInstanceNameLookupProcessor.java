@@ -49,10 +49,11 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
     @Inject
     public AWSInstanceNameLookupProcessor(ClusterConfigService clusterConfigService,
+                                          InstanceLookupTable instanceLookupTable,
                                           MetricRegistry metricRegistry,
                                           Configuration configuration) {
         this.metricRegistry = metricRegistry;
-        this.table = InstanceLookupTable.getInstance();
+        this.table = instanceLookupTable;
 
         Runnable refresh = new Runnable() {
             @Override

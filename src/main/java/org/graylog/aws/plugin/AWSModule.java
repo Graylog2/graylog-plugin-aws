@@ -9,6 +9,7 @@ import org.graylog.aws.inputs.codecs.CloudWatchFlowLogCodec;
 import org.graylog.aws.inputs.transports.KinesisTransport;
 import org.graylog.aws.inputs.flowlogs.FlowLogsInput;
 import org.graylog.aws.processors.instancelookup.AWSInstanceNameLookupProcessor;
+import org.graylog.aws.processors.instancelookup.InstanceLookupTable;
 import org.graylog2.plugin.PluginModule;
 
 public class AWSModule extends PluginModule {
@@ -28,5 +29,7 @@ public class AWSModule extends PluginModule {
 
         // Instance name lookup
         addMessageProcessor(AWSInstanceNameLookupProcessor.class, AWSInstanceNameLookupProcessor.Descriptor.class);
+
+        bind(InstanceLookupTable.class).asEagerSingleton();
     }
 }

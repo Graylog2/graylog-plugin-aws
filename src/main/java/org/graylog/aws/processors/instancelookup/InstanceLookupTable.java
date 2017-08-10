@@ -19,12 +19,12 @@ import org.graylog.aws.config.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Singleton;
 import java.util.List;
 
+@Singleton
 public class InstanceLookupTable {
     private static final Logger LOG = LoggerFactory.getLogger(InstanceLookupTable.class);
-
-    private static InstanceLookupTable INSTANCE = new InstanceLookupTable();
 
     enum InstanceType {
         RDS,
@@ -39,12 +39,6 @@ public class InstanceLookupTable {
     private ImmutableMap<String, NetworkInterface> networkInterfaces;
 
     // TODO METRICS
-
-    public static InstanceLookupTable getInstance() {
-        return INSTANCE;
-    }
-
-    private InstanceLookupTable() { /* nope */ }
 
     public void reload(List<Regions> regions, AWSAuthProvider awsAuthProvider, HttpUrl proxyUrl) {
         LOG.info("Reloading AWS instance lookup table.");
