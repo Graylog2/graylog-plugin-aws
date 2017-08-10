@@ -1,6 +1,9 @@
 package org.graylog.aws.kinesis;
 
 import com.amazonaws.regions.Region;
+import com.amazonaws.services.kinesis.clientlibrary.exceptions.InvalidStateException;
+import com.amazonaws.services.kinesis.clientlibrary.exceptions.ShutdownException;
+import com.amazonaws.services.kinesis.clientlibrary.exceptions.ThrottlingException;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
@@ -9,18 +12,28 @@ import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput;
 import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput;
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput;
 import com.amazonaws.services.kinesis.model.Record;
+import com.github.rholder.retry.Attempt;
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.RetryListener;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.config.Proxy;
 import org.graylog2.plugin.Tools;
 import org.graylog2.plugin.system.NodeId;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -73,6 +86,8 @@ public class KinesisConsumer implements Runnable {
         }
 
         final IRecordProcessorFactory recordProcessorFactory = () -> new IRecordProcessor() {
+            private DateTime lastCheckpoint = DateTime.now();
+
             @Override
             public void initialize(InitializationInput initializationInput) {
                 LOG.info("Initializing Kinesis worker for stream <{}>", kinesisStreamName);
@@ -94,6 +109,48 @@ public class KinesisConsumer implements Runnable {
                     } catch (Exception e) {
                         LOG.error("Couldn't read Kinesis record from stream <{}>", kinesisStreamName, e);
                     }
+                }
+
+                // According to the Kinesis client documentation, we should not checkpoint for every record but
+                // rather periodically.
+                // TODO: Make interval configurable (global)
+                if (lastCheckpoint.plusMinutes(1).isBeforeNow()) {
+                    lastCheckpoint = DateTime.now();
+                    LOG.debug("Checkpointing stream <{}>", kinesisStreamName);
+                    checkpoint(processRecordsInput);
+                }
+            }
+
+            private void checkpoint(ProcessRecordsInput processRecordsInput) {
+                final Retryer<Void> retryer = RetryerBuilder.<Void>newBuilder()
+                        .retryIfExceptionOfType(ThrottlingException.class)
+                        .withWaitStrategy(WaitStrategies.fixedWait(1, TimeUnit.SECONDS))
+                        .withStopStrategy(StopStrategies.stopAfterDelay(10, TimeUnit.MINUTES))
+                        .withRetryListener(new RetryListener() {
+                            @Override
+                            public <V> void onRetry(Attempt<V> attempt) {
+                                if (attempt.hasException()) {
+                                    LOG.warn("Checkpointing stream <{}> failed, retrying. (attempt {})", kinesisStreamName, attempt.getAttemptNumber());
+                                }
+                            }
+                        })
+                        .build();
+
+                try {
+                    retryer.call(() -> {
+                        try {
+                            processRecordsInput.getCheckpointer().checkpoint();
+                        } catch (InvalidStateException e) {
+                            LOG.error("Couldn't save checkpoint to DynamoDB table used by the Kinesis client library - check database table", e);
+                        } catch (ShutdownException e) {
+                            LOG.debug("Processor is shutting down, skipping checkpoint");
+                        }
+                        return null;
+                    });
+                } catch (ExecutionException e) {
+                    LOG.error("Couldn't checkpoint stream <{}>", kinesisStreamName, e);
+                } catch (RetryException e) {
+                    LOG.error("Checkpoint retry for stream <{}> finally failed", kinesisStreamName, e);
                 }
             }
 
