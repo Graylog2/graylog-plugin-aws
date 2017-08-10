@@ -1,6 +1,5 @@
 package org.graylog.aws.inputs.codecs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog2.plugin.Message;
@@ -22,8 +21,7 @@ public class CloudWatchRawLogCodec extends CloudWatchLogDataCodec {
     private final Configuration configuration;
 
     @Inject
-    public CloudWatchRawLogCodec(@Assisted Configuration configuration, ObjectMapper objectMapper) {
-        super(objectMapper);
+    public CloudWatchRawLogCodec(@Assisted Configuration configuration) {
         this.configuration = configuration;
     }
 

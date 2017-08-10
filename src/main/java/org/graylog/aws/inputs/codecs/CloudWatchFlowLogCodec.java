@@ -1,6 +1,5 @@
 package org.graylog.aws.inputs.codecs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.AWS;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
@@ -28,8 +27,7 @@ public class CloudWatchFlowLogCodec extends CloudWatchLogDataCodec {
     private final IANAProtocolNumbers protocolNumbers;
 
     @Inject
-    public CloudWatchFlowLogCodec(@Assisted Configuration configuration, ObjectMapper objectMapper) {
-        super(objectMapper);
+    public CloudWatchFlowLogCodec(@Assisted Configuration configuration) {
         this.configuration = configuration;
         this.protocolNumbers = new IANAProtocolNumbers();
     }

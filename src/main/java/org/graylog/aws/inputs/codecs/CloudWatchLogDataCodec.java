@@ -16,14 +16,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+
 public abstract class CloudWatchLogDataCodec implements MultiMessageCodec {
     private static final Logger LOG = LoggerFactory.getLogger(CloudWatchLogDataCodec.class);
-
-    private final ObjectMapper objectMapper;
-
-    public CloudWatchLogDataCodec(final ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Nullable
     @Override
@@ -35,7 +32,7 @@ public abstract class CloudWatchLogDataCodec implements MultiMessageCodec {
     @Override
     public Collection<Message> decodeMessages(@Nonnull RawMessage rawMessage) {
         try {
-            final CloudWatchLogData data = objectMapper.readValue(rawMessage.getPayload(), CloudWatchLogData.class);
+            final CloudWatchLogData data = OBJECT_MAPPER.readValue(rawMessage.getPayload(), CloudWatchLogData.class);
             final List<Message> messages = new ArrayList<>(data.logEvents.size());
 
             for (final CloudWatchLogEvent logEvent : data.logEvents) {
