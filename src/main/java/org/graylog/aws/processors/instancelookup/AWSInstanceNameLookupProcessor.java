@@ -1,11 +1,11 @@
 package org.graylog.aws.processors.instancelookup;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import okhttp3.HttpUrl;
 import org.graylog.aws.AWS;
+import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog2.Configuration;
 import org.graylog2.plugin.Message;
@@ -70,6 +70,8 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
                         return;
                     }
 
+                    final AWSAuthProvider awsAuthProvider = new AWSAuthProvider(config);
+
                     LOG.debug("Refreshing AWS instance lookup table.");
 
                     final HttpUrl proxyUrl = config.proxyEnabled() && configuration.getHttpProxyUri() != null
@@ -77,7 +79,7 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
 
                     table.reload(
                             config.getLookupRegions(),
-                            new BasicAWSCredentials(config.accessKey(), config.secretKey()),
+                            awsAuthProvider,
                             proxyUrl
                     );
                 } catch (Exception e) {
