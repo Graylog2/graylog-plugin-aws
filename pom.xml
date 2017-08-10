@@ -34,7 +34,8 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.site.skip>true</maven.site.skip>
         <graylog.version>2.3.0</graylog.version>
-        <aws-java-sdk.version>1.11.98</aws-java-sdk.version>
+        <aws-java-sdk.version>1.11.174</aws-java-sdk.version>
+        <aws-kinesis-client.version>1.8.1</aws-kinesis-client.version>
     </properties>
 
     <dependencyManagement>
@@ -114,7 +115,7 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>amazon-kinesis-client</artifactId>
-            <version>1.7.4</version>
+            <version>${aws-kinesis-client.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>commons-logging</groupId>
