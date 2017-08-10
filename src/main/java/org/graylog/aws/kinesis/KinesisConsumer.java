@@ -77,7 +77,7 @@ public class KinesisConsumer implements Runnable {
 
             @Override
             public void processRecords(ProcessRecordsInput processRecordsInput) {
-                LOG.info("Received {} Kinesis events", processRecordsInput.getRecords().size());
+                LOG.debug("Received {} Kinesis events", processRecordsInput.getRecords().size());
 
                 for (Record record : processRecordsInput.getRecords()) {
                     try {
