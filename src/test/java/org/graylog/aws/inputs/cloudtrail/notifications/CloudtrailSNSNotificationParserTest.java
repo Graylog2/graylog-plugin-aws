@@ -1,11 +1,11 @@
 package org.graylog.aws.inputs.cloudtrail.notifications;
 
 import com.amazonaws.services.sqs.model.Message;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.List;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class CloudtrailSNSNotificationParserTest {
 

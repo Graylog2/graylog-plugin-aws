@@ -2,9 +2,9 @@ package org.graylog.aws.inputs.flowlogs;
 
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog.aws.cloudwatch.FlowLogMessage;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 public class FlowLogMessageTest {
