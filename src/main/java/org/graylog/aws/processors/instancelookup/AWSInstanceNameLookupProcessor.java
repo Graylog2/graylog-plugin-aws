@@ -59,15 +59,16 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
             @Override
             public void run() {
                 try {
-                    config = clusterConfigService.get(AWSPluginConfiguration.class);
-
-                    if(config == null || !config.isComplete()) {
-                        LOG.warn("AWS plugin is not fully configured. No instance lookups will happen.");
-                        return;
-                    }
+                    config = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
+                            AWSPluginConfiguration.createDefault());
 
                     if (!config.lookupsEnabled()) {
                         LOG.debug("AWS instance name lookups are disabled.");
+                        return;
+                    }
+
+                    if (config.lookupsEnabled() && config.getLookupRegions().isEmpty()) {
+                        LOG.warn("AWS region configuration is not complete. No instance lookups will happen.");
                         return;
                     }
 
