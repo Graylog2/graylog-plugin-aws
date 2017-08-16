@@ -10,18 +10,24 @@ import org.graylog.aws.config.AWSPluginConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 public class AWSAuthProvider implements AWSCredentialsProvider {
     private static final Logger LOG = LoggerFactory.getLogger(AWSAuthProvider.class);
 
     private AWSCredentialsProvider credentials;
 
-    public AWSAuthProvider(AWSPluginConfiguration config, String accessKey, String secretKey) {
-        if (accessKey != null && secretKey != null
-                && !accessKey.isEmpty() && !secretKey.isEmpty()) {
+    public AWSAuthProvider(AWSPluginConfiguration config) {
+        this(config, null, null);
+    }
+
+    public AWSAuthProvider(AWSPluginConfiguration config, @Nullable String accessKey, @Nullable String secretKey) {
+        if (!isNullOrEmpty(accessKey) && !isNullOrEmpty(secretKey)) {
             this.credentials = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
             LOG.debug("Using input specific config");
-        } else if (config.accessKey() != null && config.secretKey() != null
-                && !config.accessKey().isEmpty() && !config.secretKey().isEmpty()) {
+        } else if (!isNullOrEmpty(config.accessKey()) && !isNullOrEmpty(config.secretKey())) {
             this.credentials = new AWSStaticCredentialsProvider(new BasicAWSCredentials(config.accessKey(), config.secretKey()));
             LOG.debug("Using AWS Plugin config");
         } else {

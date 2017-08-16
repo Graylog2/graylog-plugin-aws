@@ -1,7 +1,7 @@
 package org.graylog.aws.processors.instancelookup;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.DescribeNetworkInterfacesResult;
@@ -14,16 +14,17 @@ import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.Tag;
 import com.google.common.collect.ImmutableMap;
 import okhttp3.HttpUrl;
+import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Singleton;
 import java.util.List;
 
+@Singleton
 public class InstanceLookupTable {
     private static final Logger LOG = LoggerFactory.getLogger(InstanceLookupTable.class);
-
-    private static InstanceLookupTable INSTANCE = new InstanceLookupTable();
 
     enum InstanceType {
         RDS,
@@ -39,13 +40,7 @@ public class InstanceLookupTable {
 
     // TODO METRICS
 
-    public static InstanceLookupTable getInstance() {
-        return INSTANCE;
-    }
-
-    private InstanceLookupTable() { /* nope */ }
-
-    public void reload(List<Regions> regions, AWSCredentials credentials, HttpUrl proxyUrl) {
+    public void reload(List<Regions> regions, AWSAuthProvider awsAuthProvider, HttpUrl proxyUrl) {
         LOG.info("Reloading AWS instance lookup table.");
 
         ImmutableMap.Builder<String, Instance> ec2InstancesBuilder = ImmutableMap.<String, Instance>builder();
@@ -53,15 +48,20 @@ public class InstanceLookupTable {
 
         for (Regions region : regions) {
             try {
-                AmazonEC2Client ec2Client;
+                AmazonEC2 ec2Client;
 
                 if(proxyUrl != null) {
-                    ec2Client = new AmazonEC2Client(credentials, Proxy.forAWS(proxyUrl));
+                    ec2Client = AmazonEC2Client.builder()
+                            .withCredentials(awsAuthProvider)
+                            .withRegion(region)
+                            .withClientConfiguration(Proxy.forAWS(proxyUrl))
+                            .build();
                 } else {
-                    ec2Client = new AmazonEC2Client(credentials);
+                    ec2Client = AmazonEC2Client.builder()
+                            .withCredentials(awsAuthProvider)
+                            .withRegion(region)
+                            .build();
                 }
-
-                ec2Client.configureRegion(region);
 
                 // Load network interfaces
                 LOG.debug("Requesting AWS network interface descriptions in [{}].", region.getName());

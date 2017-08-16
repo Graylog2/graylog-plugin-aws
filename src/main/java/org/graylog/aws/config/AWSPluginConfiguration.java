@@ -65,15 +65,9 @@ public abstract class AWSPluginConfiguration {
     }
 
     @JsonIgnore
-    public boolean isComplete() {
-        return accessKey() != null && secretKey() != null
-                && !accessKey().isEmpty() && !secretKey().isEmpty();
-    }
-
-    @JsonIgnore
     public List<Regions> getLookupRegions() {
         if (lookupRegions() == null || lookupRegions().isEmpty()) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         ImmutableList.Builder<Regions> builder = ImmutableList.<Regions>builder();

@@ -1,8 +1,10 @@
-package org.graylog.aws.inputs.flowlogs;
+package org.graylog.aws.inputs.codecs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.AWS;
+import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
+import org.graylog.aws.cloudwatch.FlowLogMessage;
+import org.graylog.aws.inputs.flowlogs.IANAProtocolNumbers;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
@@ -10,10 +12,7 @@ import org.graylog2.plugin.inputs.annotations.ConfigClass;
 import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import org.graylog2.plugin.inputs.codecs.Codec;
 import org.graylog2.plugin.inputs.codecs.CodecAggregator;
-import org.graylog2.plugin.journal.RawMessage;
 import org.joda.time.Seconds;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -21,38 +20,29 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FlowLogCodec implements Codec {
-    private static final Logger LOG = LoggerFactory.getLogger(FlowLogCodec.class);
+public class CloudWatchFlowLogCodec extends CloudWatchLogDataCodec {
     public static final String NAME = "AWSFlowLog";
 
     private final Configuration configuration;
-    private final ObjectMapper objectMapper;
-
     private final IANAProtocolNumbers protocolNumbers;
 
     @Inject
-    public FlowLogCodec(@Assisted Configuration configuration, ObjectMapper objectMapper) {
+    public CloudWatchFlowLogCodec(@Assisted Configuration configuration) {
         this.configuration = configuration;
-        this.objectMapper = objectMapper;
-
         this.protocolNumbers = new IANAProtocolNumbers();
     }
 
     @Nullable
     @Override
-    public Message decode(@Nonnull RawMessage rawMessage) {
+    public Message decodeLogData(@Nonnull final CloudWatchLogEvent logEvent) {
         try {
-            String rawString = new String(rawMessage.getPayload());
-            String[] parts = rawString.split(" ");
+            final FlowLogMessage flowLogMessage = FlowLogMessage.fromLogEvent(logEvent);
 
-            if (parts.length != 15) {
-                LOG.warn("Received FlowLog message with not exactly 15 fields. Skipping. Message was: [{}]", rawString);
+            if (flowLogMessage == null) {
                 return null;
             }
 
-            FlowLogMessage flowLogMessage = FlowLogMessage.fromParts(parts);
-
-            Message result = new Message(
+            final Message result = new Message(
                     buildSummary(flowLogMessage),
                     "aws-flowlogs",
                     flowLogMessage.getTimestamp()
@@ -113,9 +103,9 @@ public class FlowLogCodec implements Codec {
     }
 
     @FactoryClass
-    public interface Factory extends Codec.Factory<FlowLogCodec> {
+    public interface Factory extends Codec.Factory<CloudWatchFlowLogCodec> {
         @Override
-        FlowLogCodec create(Configuration configuration);
+        CloudWatchFlowLogCodec create(Configuration configuration);
 
         @Override
         Config getConfig();
