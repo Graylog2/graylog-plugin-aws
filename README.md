@@ -7,6 +7,7 @@
 This plugin provides the following Graylog modules:
 
 * Input plugin for [AWS Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) network interface connection logs
+* Input plugin for [AWS Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
 * Input plugin for [AWS CloudTrail](http://aws.amazon.com/cloudtrail/) logs
 
 Graylog Version Compatibility
