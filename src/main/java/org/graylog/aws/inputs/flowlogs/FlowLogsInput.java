@@ -14,7 +14,7 @@ import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import javax.inject.Inject;
 
 public class FlowLogsInput extends MessageInput {
-    private static final String NAME = "AWS CloudWatch Flow Logs";
+    private static final String NAME = "AWS Flow Logs";
 
     @Inject
     public FlowLogsInput(@Assisted Configuration configuration,
