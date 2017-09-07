@@ -1,6 +1,6 @@
 # AWS Plugin For Graylog
 
-[![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-aws.svg)](https://travis-ci.org/Graylog2/graylog-plugin-aws)
+[![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-aws.svg?branch=2.3)](https://travis-ci.org/Graylog2/graylog-plugin-aws)
 [![Github Downloads](https://img.shields.io/github/downloads/Graylog2/graylog-plugin-aws/total.svg)](https://github.com/Graylog2/graylog-plugin-aws/releases)
 [![GitHub Release](https://img.shields.io/github/release/Graylog2/graylog-plugin-aws.svg)](https://github.com/Graylog2/graylog-plugin-aws/releases)
 
