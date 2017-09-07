@@ -21,9 +21,9 @@
     <url>https://www.graylog.org</url>
 
     <scm>
-        <connection>scm:git:git@github.com:graylog-labs/graylog-plugin-aws.git</connection>
-        <developerConnection>scm:git:git@github.com:graylog-labs/graylog-plugin-aws.git</developerConnection>
-        <url>https://github.com/graylog-labs/graylog-plugin-aws</url>
+        <connection>scm:git:git@github.com:Graylog2/graylog-plugin-aws.git</connection>
+        <developerConnection>scm:git:git@github.com:Graylog2/graylog-plugin-aws.git</developerConnection>
+        <url>https://github.com/Graylog2/graylog-plugin-aws</url>
         <tag>HEAD</tag>
     </scm>
 
