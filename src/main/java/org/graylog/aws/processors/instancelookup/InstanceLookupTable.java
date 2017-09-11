@@ -41,7 +41,7 @@ public class InstanceLookupTable {
     // TODO METRICS
 
     public void reload(List<Regions> regions, AWSAuthProvider awsAuthProvider, HttpUrl proxyUrl) {
-        LOG.info("Reloading AWS instance lookup table.");
+        LOG.debug("Reloading AWS instance lookup table.");
 
         ImmutableMap.Builder<String, Instance> ec2InstancesBuilder = ImmutableMap.<String, Instance>builder();
         ImmutableMap.Builder<String, NetworkInterface> networkInterfacesBuilder = ImmutableMap.<String, NetworkInterface>builder();
