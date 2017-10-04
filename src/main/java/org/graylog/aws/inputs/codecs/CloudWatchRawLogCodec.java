@@ -3,12 +3,13 @@ package org.graylog.aws.inputs.codecs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
+import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.plugin.AWSObjectMapper;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
-import org.graylog2.plugin.configuration.ConfigurationRequest;
 import org.graylog2.plugin.inputs.annotations.ConfigClass;
 import org.graylog2.plugin.inputs.annotations.FactoryClass;
+import org.graylog2.plugin.inputs.codecs.AbstractCodec;
 import org.graylog2.plugin.inputs.codecs.Codec;
 import org.joda.time.DateTime;
 
@@ -28,7 +29,8 @@ public class CloudWatchRawLogCodec extends CloudWatchLogDataCodec {
     @Override
     public Message decodeLogData(@Nonnull final CloudWatchLogEvent logEvent) {
         try {
-            return new Message(logEvent.message, "aws-raw-logs", new DateTime(logEvent.timestamp));
+            final String source = configuration.getString(CloudTrailCodec.Config.CK_OVERRIDE_SOURCE, "aws-raw-logs");
+            return new Message(logEvent.message, source, new DateTime(logEvent.timestamp));
         } catch (Exception e) {
             throw new RuntimeException("Could not deserialize AWS FlowLog record.", e);
         }
@@ -49,14 +51,6 @@ public class CloudWatchRawLogCodec extends CloudWatchLogDataCodec {
     }
 
     @ConfigClass
-    public static class Config implements Codec.Config {
-        @Override
-        public ConfigurationRequest getRequestedConfiguration() {
-            return new ConfigurationRequest();
-        }
-
-        @Override
-        public void overrideDefaultValues(@Nonnull ConfigurationRequest cr) {
-        }
+    public static class Config extends AbstractCodec.Config {
     }
 }

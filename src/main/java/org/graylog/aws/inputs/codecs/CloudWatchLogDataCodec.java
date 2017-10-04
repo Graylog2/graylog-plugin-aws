@@ -5,6 +5,7 @@ import org.graylog.aws.cloudwatch.CloudWatchLogData;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
+import org.graylog2.plugin.inputs.codecs.AbstractCodec;
 import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.graylog2.plugin.inputs.codecs.MultiMessageCodec;
 import org.graylog2.plugin.journal.RawMessage;
@@ -18,14 +19,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class CloudWatchLogDataCodec implements MultiMessageCodec {
+public abstract class CloudWatchLogDataCodec extends AbstractCodec implements MultiMessageCodec {
     private static final Logger LOG = LoggerFactory.getLogger(CloudWatchLogDataCodec.class);
 
-    protected final Configuration configuration;
     private final ObjectMapper objectMapper;
 
-    public CloudWatchLogDataCodec(Configuration configuration, ObjectMapper objectMapper) {
-        this.configuration = configuration;
+    CloudWatchLogDataCodec(Configuration configuration, ObjectMapper objectMapper) {
+        super(configuration);
         this.objectMapper = objectMapper;
     }
 

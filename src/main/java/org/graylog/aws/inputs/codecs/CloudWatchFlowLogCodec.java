@@ -5,6 +5,7 @@ import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.AWS;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog.aws.cloudwatch.FlowLogMessage;
+import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.inputs.flowlogs.IANAProtocolNumbers;
 import org.graylog.aws.plugin.AWSObjectMapper;
 import org.graylog2.plugin.Message;
@@ -12,6 +13,7 @@ import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
 import org.graylog2.plugin.inputs.annotations.ConfigClass;
 import org.graylog2.plugin.inputs.annotations.FactoryClass;
+import org.graylog2.plugin.inputs.codecs.AbstractCodec;
 import org.graylog2.plugin.inputs.codecs.Codec;
 import org.joda.time.Seconds;
 
@@ -42,9 +44,10 @@ public class CloudWatchFlowLogCodec extends CloudWatchLogDataCodec {
                 return null;
             }
 
+            final String source = configuration.getString(CloudTrailCodec.Config.CK_OVERRIDE_SOURCE, "aws-flowlogs");
             final Message result = new Message(
                     buildSummary(flowLogMessage),
-                    "aws-flowlogs",
+                    source,
                     flowLogMessage.getTimestamp()
             );
             result.addFields(buildFields(flowLogMessage));
@@ -100,7 +103,7 @@ public class CloudWatchFlowLogCodec extends CloudWatchLogDataCodec {
     }
 
     @ConfigClass
-    public static class Config implements Codec.Config {
+    public static class Config extends AbstractCodec.Config {
         @Override
         public ConfigurationRequest getRequestedConfiguration() {
             return new ConfigurationRequest();
