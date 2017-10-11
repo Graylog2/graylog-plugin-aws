@@ -1,12 +1,10 @@
 package org.graylog.aws.inputs.cloudtrail.json;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class CloudTrailUserIdentity {
     @JsonProperty("type")
     public String type;

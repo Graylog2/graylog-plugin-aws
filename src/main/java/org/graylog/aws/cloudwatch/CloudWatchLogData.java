@@ -1,6 +1,5 @@
 package org.graylog.aws.cloudwatch;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -31,7 +30,6 @@ import java.util.List;
  * }
  * </pre>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class CloudWatchLogData {
     @JsonProperty("logEvents")
     public List<CloudWatchLogEvent> logEvents;

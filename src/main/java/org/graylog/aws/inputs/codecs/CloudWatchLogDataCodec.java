@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.graylog.aws.cloudwatch.CloudWatchLogData;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog2.plugin.Message;
+import org.graylog2.plugin.configuration.Configuration;
+import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.graylog2.plugin.inputs.codecs.MultiMessageCodec;
 import org.graylog2.plugin.journal.RawMessage;
 import org.slf4j.Logger;
@@ -16,11 +18,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-
 public abstract class CloudWatchLogDataCodec implements MultiMessageCodec {
     private static final Logger LOG = LoggerFactory.getLogger(CloudWatchLogDataCodec.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    protected final Configuration configuration;
+    private final ObjectMapper objectMapper;
+
+    public CloudWatchLogDataCodec(Configuration configuration, ObjectMapper objectMapper) {
+        this.configuration = configuration;
+        this.objectMapper = objectMapper;
+    }
 
     @Nullable
     @Override
@@ -32,7 +39,7 @@ public abstract class CloudWatchLogDataCodec implements MultiMessageCodec {
     @Override
     public Collection<Message> decodeMessages(@Nonnull RawMessage rawMessage) {
         try {
-            final CloudWatchLogData data = OBJECT_MAPPER.readValue(rawMessage.getPayload(), CloudWatchLogData.class);
+            final CloudWatchLogData data = objectMapper.readValue(rawMessage.getPayload(), CloudWatchLogData.class);
             final List<Message> messages = new ArrayList<>(data.logEvents.size());
 
             for (final CloudWatchLogEvent logEvent : data.logEvents) {
@@ -54,4 +61,16 @@ public abstract class CloudWatchLogDataCodec implements MultiMessageCodec {
 
     @Nullable
     protected abstract Message decodeLogData(@Nonnull final CloudWatchLogEvent event);
+
+    @Nonnull
+    @Override
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    @Nullable
+    @Override
+    public CodecAggregator getAggregator() {
+        return null;
+    }
 }

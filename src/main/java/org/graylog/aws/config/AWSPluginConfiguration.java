@@ -4,7 +4,6 @@ import com.amazonaws.regions.Regions;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -15,7 +14,6 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonAutoDetect
-@JsonIgnoreProperties(ignoreUnknown = true)
 @AutoValue
 public abstract class AWSPluginConfiguration {
     private static final Logger LOG = LoggerFactory.getLogger(AWSPluginConfiguration.class);
@@ -76,7 +74,7 @@ public abstract class AWSPluginConfiguration {
         for (String regionName : regions) {
             try {
                 builder.add(Regions.fromName(regionName.trim()));
-            } catch(IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 LOG.info("Cannot translate [{}] into AWS region. Make sure it is a correct region code like for example 'us-west-1'.", regionName);
             }
         }

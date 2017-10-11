@@ -1,6 +1,5 @@
 package org.graylog.aws.inputs.cloudtrail.json;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Maps;
 import com.graylog2.input.cloudtrail.json.CloudTrailResponseElements;
@@ -9,7 +8,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class CloudTrailRecord implements Serializable {
     @JsonProperty("eventVersion")
     public String eventVersion;
@@ -19,7 +17,7 @@ public class CloudTrailRecord implements Serializable {
     @JsonProperty("userIdentity")
     public CloudTrailUserIdentity userIdentity;
 
-    //adding reponseElements
+    //adding responseElements
     @JsonProperty("responseElements")
     public CloudTrailResponseElements responseElements;
 
@@ -42,11 +40,11 @@ public class CloudTrailRecord implements Serializable {
     public String eventType;
     @JsonProperty("recipientAccountId")
     public String recipientAccountId;
- 
+
     //adding errorMessage 
     @JsonProperty("errorMessage")
-    public String errorMessage; 
- 
+    public String errorMessage;
+
     @JsonProperty("requestParameters")
     public Map<String, Object> requestParameters;
 
@@ -62,13 +60,13 @@ public class CloudTrailRecord implements Serializable {
         m.put("event_id", eventID);
         m.put("event_type", eventType);
         m.put("recipient_account_id", recipientAccountId);
-     
+
         //adding errorMessage if present
         if (errorMessage != null) {
-           m.put("errorMessage", errorMessage);
+            m.put("errorMessage", errorMessage);
         }
-      
-       if (userIdentity != null) {
+
+        if (userIdentity != null) {
             m.putAll(userIdentity.additionalFieldsAsMap());
         }
 

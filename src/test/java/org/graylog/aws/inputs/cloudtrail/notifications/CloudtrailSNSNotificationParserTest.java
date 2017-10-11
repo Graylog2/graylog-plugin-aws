@@ -1,6 +1,8 @@
 package org.graylog.aws.inputs.cloudtrail.notifications;
 
 import com.amazonaws.services.sqs.model.Message;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.util.List;
@@ -9,6 +11,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class CloudtrailSNSNotificationParserTest {
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
     @Test
     public void testParse() throws Exception {
         final Message message = new Message()
@@ -24,7 +29,7 @@ public class CloudtrailSNSNotificationParserTest {
                         "  \"UnsubscribeURL\" : \"https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-1:459220251735:cloudtrail-write:9a3a4e76-4173-4c8c-b488-0126315ba643\"\n" +
                         "}");
 
-        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser();
+        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser(objectMapper);
 
         List<CloudtrailSNSNotification> notifications = parser.parse(message);
         assertEquals(1, notifications.size());
@@ -40,7 +45,7 @@ public class CloudtrailSNSNotificationParserTest {
         final Message message = new Message()
                 .withBody("{\"Message\" : \"{\\\"Foobar\\\" : \\\"Quux\\\",\\\"s3Bucket\\\":\\\"cloudtrailbucket\\\",\\\"s3ObjectKey\\\":[\\\"example/AWSLogs/459220251735/CloudTrail/eu-west-1/2014/09/27/459220251735_CloudTrail_eu-west-1_20140927T1625Z_UPwzr7ft2mf0Q1SS.json.gz\\\"]}\"}");
 
-        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser();
+        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser(objectMapper);
 
         List<CloudtrailSNSNotification> notifications = parser.parse(message);
         assertEquals(1, notifications.size());
@@ -68,7 +73,7 @@ public class CloudtrailSNSNotificationParserTest {
                         "  \"UnsubscribeURL\" : \"https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-1:123456789012:cloudtrail-log-write:5b0a73e6-a4f8-11e7-8dfb-8f76310a10a8\"\n" +
                         "}");
 
-        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser();
+        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser(objectMapper);
 
         List<CloudtrailSNSNotification> notifications = parser.parse(message);
         assertTrue(notifications.isEmpty());
@@ -89,7 +94,7 @@ public class CloudtrailSNSNotificationParserTest {
                         "  \"UnsubscribeURL\" : \"https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-1:459220251735:cloudtrail-write:9a3a4e76-4173-4c8c-b488-0126315ba643\"\n" +
                         "}");
 
-        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser();
+        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser(objectMapper);
 
         List<CloudtrailSNSNotification> notifications = parser.parse(doubleMessage);
         assertEquals(2, notifications.size());

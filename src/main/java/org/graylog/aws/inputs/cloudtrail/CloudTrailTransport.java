@@ -3,12 +3,14 @@ package org.graylog.aws.inputs.cloudtrail;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.codahale.metrics.MetricSet;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.assistedinject.Assisted;
 import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
+import org.graylog.aws.plugin.AWSObjectMapper;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.cluster.ClusterConfigService;
@@ -53,6 +55,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private final URI httpProxyUri;
     private final LocalMetricRegistry localRegistry;
     private final ClusterConfigService clusterConfigService;
+    private final ObjectMapper objectMapper;
 
     private CloudTrailSubscriber subscriber;
 
@@ -61,12 +64,14 @@ public class CloudTrailTransport extends ThrottleableTransport {
                                final ClusterConfigService clusterConfigService,
                                final EventBus serverEventBus,
                                final ServerStatus serverStatus,
+                               @AWSObjectMapper ObjectMapper objectMapper,
                                @Named("http_proxy_uri") @Nullable URI httpProxyUri,
                                LocalMetricRegistry localRegistry) {
         super(serverEventBus, configuration);
 
         this.clusterConfigService = clusterConfigService;
         this.serverStatus = serverStatus;
+        this.objectMapper = objectMapper;
         this.httpProxyUri = httpProxyUri;
         this.localRegistry = localRegistry;
     }
@@ -122,7 +127,8 @@ public class CloudTrailTransport extends ThrottleableTransport {
                 input.getConfiguration().getString(CK_SQS_NAME),
                 input,
                 authProvider,
-                proxyUrl
+                proxyUrl,
+                objectMapper
         );
 
         subscriber.start();

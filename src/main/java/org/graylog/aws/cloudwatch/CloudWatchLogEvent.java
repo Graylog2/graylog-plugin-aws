@@ -1,6 +1,5 @@
 package org.graylog.aws.cloudwatch;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 
@@ -16,7 +15,6 @@ import com.google.common.base.MoreObjects;
  * }
  * </pre>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class CloudWatchLogEvent {
     @JsonProperty("timestamp")
     public long timestamp;

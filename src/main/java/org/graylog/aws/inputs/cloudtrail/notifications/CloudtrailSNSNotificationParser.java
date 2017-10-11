@@ -12,7 +12,11 @@ import java.util.Collections;
 import java.util.List;
 
 public class CloudtrailSNSNotificationParser {
-    private final ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    private final ObjectMapper objectMapper;
+
+    public CloudtrailSNSNotificationParser(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     public List<CloudtrailSNSNotification> parse(Message message) {
 
