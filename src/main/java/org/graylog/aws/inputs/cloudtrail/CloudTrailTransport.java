@@ -48,6 +48,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private static final String CK_SQS_NAME = "aws_sqs_queue_name";
     private static final String CK_ACCESS_KEY = "aws_access_key";
     private static final String CK_SECRET_KEY = "aws_secret_key";
+    private static final String CK_ASSUME_ROLE_ARN = "aws_assume_role_arn";
 
     private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
 
@@ -118,7 +119,9 @@ public class CloudTrailTransport extends ThrottleableTransport {
         final AWSAuthProvider authProvider = new AWSAuthProvider(
                 config,
                 input.getConfiguration().getString(CK_ACCESS_KEY),
-                input.getConfiguration().getString(CK_SECRET_KEY)
+                input.getConfiguration().getString(CK_SECRET_KEY),
+                input.getConfiguration().getString(CK_AWS_SQS_REGION),
+                input.getConfiguration().getString(CK_ASSUME_ROLE_ARN)
         );
 
         subscriber = new CloudTrailSubscriber(
@@ -207,6 +210,14 @@ public class CloudTrailTransport extends ThrottleableTransport {
                     ConfigurationField.Optional.OPTIONAL,
                     TextField.Attribute.IS_PASSWORD
              ));
+
+            r.addField(new TextField(
+                    CK_ASSUME_ROLE_ARN,
+                    "AWS assume role ARN",
+                    "",
+                    "The role ARN with required permissions (cross account access)",
+                    ConfigurationField.Optional.OPTIONAL
+            ));
 
             return r;
         }
