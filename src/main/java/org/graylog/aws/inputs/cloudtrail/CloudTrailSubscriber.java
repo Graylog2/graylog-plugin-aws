@@ -35,15 +35,17 @@ public class CloudTrailSubscriber extends Thread {
     private final String queueName;
     private final AWSAuthProvider authProvider;
     private final HttpUrl proxyUrl;
+    private final ObjectMapper objectMapper;
 
     public CloudTrailSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput,
-                                AWSAuthProvider authProvider, HttpUrl proxyUrl) {
+                                AWSAuthProvider authProvider, HttpUrl proxyUrl, ObjectMapper objectMapper) {
         this.sqsRegion = sqsRegion;
         this.s3Region = s3Region;
         this.queueName = queueName;
         this.authProvider = authProvider;
         this.sourceInput = sourceInput;
         this.proxyUrl = proxyUrl;
+        this.objectMapper = objectMapper;
     }
 
     public void pause() {
@@ -63,11 +65,11 @@ public class CloudTrailSubscriber extends Thread {
                 sqsRegion,
                 queueName,
                 authProvider,
-                proxyUrl
+                proxyUrl,
+                objectMapper
         );
 
-        final ObjectMapper objectMapper = new ObjectMapper();
-        TreeReader reader = new TreeReader();
+        TreeReader reader = new TreeReader(objectMapper);
         S3Reader s3Reader = new S3Reader(s3Region, proxyUrl, authProvider);
 
         // This looks weird but it actually makes sense! Believe me.

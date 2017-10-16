@@ -1,17 +1,18 @@
 package org.graylog.aws.inputs.codecs;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.AWS;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog.aws.cloudwatch.FlowLogMessage;
 import org.graylog.aws.inputs.flowlogs.IANAProtocolNumbers;
+import org.graylog.aws.plugin.AWSObjectMapper;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
 import org.graylog2.plugin.inputs.annotations.ConfigClass;
 import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import org.graylog2.plugin.inputs.codecs.Codec;
-import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.joda.time.Seconds;
 
 import javax.annotation.Nonnull;
@@ -23,12 +24,11 @@ import java.util.Map;
 public class CloudWatchFlowLogCodec extends CloudWatchLogDataCodec {
     public static final String NAME = "AWSFlowLog";
 
-    private final Configuration configuration;
     private final IANAProtocolNumbers protocolNumbers;
 
     @Inject
-    public CloudWatchFlowLogCodec(@Assisted Configuration configuration) {
-        this.configuration = configuration;
+    public CloudWatchFlowLogCodec(@Assisted Configuration configuration, @AWSObjectMapper ObjectMapper objectMapper) {
+        super(configuration, objectMapper);
         this.protocolNumbers = new IANAProtocolNumbers();
     }
 
@@ -68,7 +68,7 @@ public class CloudWatchFlowLogCodec extends CloudWatchLogDataCodec {
     }
 
     private Map<String, Object> buildFields(FlowLogMessage msg) {
-        return new HashMap<String, Object>(){{
+        return new HashMap<String, Object>() {{
             put("account_id", msg.getAccountId());
             put("interface_id", msg.getInterfaceId());
             put("src_addr", msg.getSourceAddress());
@@ -83,18 +83,6 @@ public class CloudWatchFlowLogCodec extends CloudWatchLogDataCodec {
             put("action", msg.getAction());
             put("log_status", msg.getLogStatus());
         }};
-    }
-
-    @Nonnull
-    @Override
-    public Configuration getConfiguration() {
-        return configuration;
-    }
-
-    @Nullable
-    @Override
-    public CodecAggregator getAggregator() {
-        return null;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package org.graylog.aws.inputs.cloudtrail.messages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import org.graylog.aws.inputs.cloudtrail.json.CloudTrailRecord;
 import org.graylog.aws.inputs.cloudtrail.json.CloudTrailRecordList;
 
@@ -11,19 +11,12 @@ import java.util.List;
 public class TreeReader {
     private final ObjectMapper om;
 
-    public TreeReader() {
-        om = new ObjectMapper();
+    public TreeReader(ObjectMapper om) {
+        this.om = om;
     }
 
     public List<CloudTrailRecord> read(String json) throws IOException {
-        List<CloudTrailRecord> messages = Lists.newArrayList();
         CloudTrailRecordList tree = om.readValue(json, CloudTrailRecordList.class);
-
-        for (CloudTrailRecord record : tree.records) {
-            messages.add(record);
-        }
-
-        return messages;
+        return ImmutableList.copyOf(tree.records);
     }
-
 }
