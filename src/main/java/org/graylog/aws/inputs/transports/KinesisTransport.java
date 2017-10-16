@@ -42,6 +42,7 @@ public class KinesisTransport implements Transport {
     private static final String CK_AWS_REGION = "aws_region";
     private static final String CK_ACCESS_KEY = "aws_access_key";
     private static final String CK_SECRET_KEY = "aws_secret_key";
+    private static final String CK_ASSUME_ROLE_ARN = "aws_assume_role_arn";
     private static final String CK_KINESIS_STREAM_NAME = "kinesis_stream_name";
 
     private final Configuration configuration;
@@ -75,7 +76,12 @@ public class KinesisTransport implements Transport {
 
         final AWSPluginConfiguration awsConfig = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
                 AWSPluginConfiguration.createDefault());
-        AWSAuthProvider authProvider = new AWSAuthProvider(awsConfig, configuration.getString(CK_ACCESS_KEY), configuration.getString(CK_SECRET_KEY));
+        AWSAuthProvider authProvider = new AWSAuthProvider(
+                awsConfig, configuration.getString(CK_ACCESS_KEY),
+                configuration.getString(CK_SECRET_KEY),
+                configuration.getString(CK_AWS_REGION),
+                configuration.getString(CK_ASSUME_ROLE_ARN)
+        );
 
         this.reader = new KinesisConsumer(
                 configuration.getString(CK_KINESIS_STREAM_NAME),
@@ -157,6 +163,14 @@ public class KinesisTransport implements Transport {
                     "Secret key of an AWS user with sufficient permissions. (See documentation)",
                     ConfigurationField.Optional.OPTIONAL,
                     TextField.Attribute.IS_PASSWORD
+            ));
+
+            r.addField(new TextField(
+                    CK_ASSUME_ROLE_ARN,
+                    "AWS assume role ARN",
+                    "",
+                    "Role ARN with required permissions (cross account access)",
+                    ConfigurationField.Optional.OPTIONAL
             ));
 
             r.addField(new TextField(
