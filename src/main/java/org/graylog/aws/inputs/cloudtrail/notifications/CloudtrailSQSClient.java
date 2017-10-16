@@ -7,9 +7,10 @@ import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import org.graylog.aws.auth.AWSAuthProvider;
 import okhttp3.HttpUrl;
+import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,17 +22,19 @@ public class CloudtrailSQSClient {
 
     private final AmazonSQS sqs;
     private final String queueName;
+    private final ObjectMapper objectMapper;
 
-    public CloudtrailSQSClient(Region region, String queueName, AWSAuthProvider authProvider, HttpUrl proxyUrl) {
+    public CloudtrailSQSClient(Region region, String queueName, AWSAuthProvider authProvider, HttpUrl proxyUrl, ObjectMapper objectMapper) {
         AmazonSQSClientBuilder clientBuilder = AmazonSQSClientBuilder.standard().withRegion(region.getName()).withCredentials(authProvider);
 
-        if(proxyUrl != null) {
+        if (proxyUrl != null) {
             clientBuilder.withClientConfiguration(Proxy.forAWS(proxyUrl));
         }
 
         this.sqs = clientBuilder.build();
 
         this.queueName = queueName;
+        this.objectMapper = objectMapper;
     }
 
     public List<CloudtrailSNSNotification> getNotifications() {
@@ -45,7 +48,7 @@ public class CloudtrailSQSClient {
 
         LOG.debug("Received [{}] SQS CloudTrail notifications.", result.getMessages().size());
 
-        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser();
+        CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser(objectMapper);
 
         for (Message message : result.getMessages()) {
             notifications.addAll(parser.parse(message));

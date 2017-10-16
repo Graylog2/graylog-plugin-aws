@@ -1,14 +1,15 @@
 package org.graylog.aws.inputs.codecs;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
+import org.graylog.aws.plugin.AWSObjectMapper;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
 import org.graylog2.plugin.inputs.annotations.ConfigClass;
 import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import org.graylog2.plugin.inputs.codecs.Codec;
-import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.joda.time.DateTime;
 
 import javax.annotation.Nonnull;
@@ -18,11 +19,9 @@ import javax.inject.Inject;
 public class CloudWatchRawLogCodec extends CloudWatchLogDataCodec {
     public static final String NAME = "AWSCloudWatchRawLog";
 
-    private final Configuration configuration;
-
     @Inject
-    public CloudWatchRawLogCodec(@Assisted Configuration configuration) {
-        this.configuration = configuration;
+    public CloudWatchRawLogCodec(@Assisted Configuration configuration, @AWSObjectMapper ObjectMapper objectMapper) {
+        super(configuration, objectMapper);
     }
 
     @Nullable
@@ -33,18 +32,6 @@ public class CloudWatchRawLogCodec extends CloudWatchLogDataCodec {
         } catch (Exception e) {
             throw new RuntimeException("Could not deserialize AWS FlowLog record.", e);
         }
-    }
-
-    @Nonnull
-    @Override
-    public Configuration getConfiguration() {
-        return configuration;
-    }
-
-    @Nullable
-    @Override
-    public CodecAggregator getAggregator() {
-        return null;
     }
 
     @Override
