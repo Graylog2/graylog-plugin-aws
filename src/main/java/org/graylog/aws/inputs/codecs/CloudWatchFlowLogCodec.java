@@ -51,8 +51,8 @@ public class CloudWatchFlowLogCodec extends CloudWatchLogDataCodec {
                     flowLogMessage.getTimestamp()
             );
             result.addFields(buildFields(flowLogMessage));
-            result.addField("aws_log_group", logGroup);
-            result.addField("aws_log_stream", logStream);
+            result.addField(AWS.FIELD_LOG_GROUP, logGroup);
+            result.addField(AWS.FIELD_LOG_STREAM, logStream);
             result.addField(AWS.SOURCE_GROUP_IDENTIFIER, true);
 
             return result;

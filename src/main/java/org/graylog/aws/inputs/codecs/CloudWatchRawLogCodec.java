@@ -2,6 +2,7 @@ package org.graylog.aws.inputs.codecs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
+import org.graylog.aws.AWS;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.plugin.AWSObjectMapper;
@@ -35,8 +36,8 @@ public class CloudWatchRawLogCodec extends CloudWatchLogDataCodec {
                     source,
                     new DateTime(logEvent.timestamp)
             );
-            result.addField("aws_log_group", logGroup);
-            result.addField("aws_log_stream", logStream);
+            result.addField(AWS.FIELD_LOG_GROUP, logGroup);
+            result.addField(AWS.FIELD_LOG_STREAM, logStream);
 
             return result;
         } catch (Exception e) {
