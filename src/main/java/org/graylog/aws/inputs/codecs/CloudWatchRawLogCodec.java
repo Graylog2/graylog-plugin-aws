@@ -2,6 +2,7 @@ package org.graylog.aws.inputs.codecs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
+import org.graylog.aws.AWS;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.plugin.AWSObjectMapper;
@@ -27,10 +28,18 @@ public class CloudWatchRawLogCodec extends CloudWatchLogDataCodec {
 
     @Nullable
     @Override
-    public Message decodeLogData(@Nonnull final CloudWatchLogEvent logEvent) {
+    public Message decodeLogData(@Nonnull final CloudWatchLogEvent logEvent, @Nonnull final String logGroup, @Nonnull final String logStream) {
         try {
             final String source = configuration.getString(CloudTrailCodec.Config.CK_OVERRIDE_SOURCE, "aws-raw-logs");
-            return new Message(logEvent.message, source, new DateTime(logEvent.timestamp));
+            Message result = new Message(
+                    logEvent.message,
+                    source,
+                    new DateTime(logEvent.timestamp)
+            );
+            result.addField(AWS.FIELD_LOG_GROUP, logGroup);
+            result.addField(AWS.FIELD_LOG_STREAM, logStream);
+
+            return result;
         } catch (Exception e) {
             throw new RuntimeException("Could not deserialize AWS FlowLog record.", e);
         }
