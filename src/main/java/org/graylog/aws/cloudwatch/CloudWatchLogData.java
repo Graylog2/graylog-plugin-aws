@@ -31,6 +31,13 @@ import java.util.List;
  * </pre>
  */
 public class CloudWatchLogData {
+
     @JsonProperty("logEvents")
     public List<CloudWatchLogEvent> logEvents;
+
+    @JsonProperty("logGroup")
+    public String logGroup;
+
+    @JsonProperty("logStream")
+    public String logStream;
 }
