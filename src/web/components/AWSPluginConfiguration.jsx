@@ -128,6 +128,7 @@ const AWSPluginConfiguration = React.createClass({
           submitButtonText="Save">
           <fieldset>
             <Input
+              id="aws-lookups-enabled"
               type="checkbox"
               ref="lookupsEnabled"
               label="Run AWS instance detail lookups for IP addresses?"
@@ -149,6 +150,7 @@ const AWSPluginConfiguration = React.createClass({
             />
 
             <Input
+              id="aws-access-key"
               type="text"
               label="AWS Access Key"
               help={
@@ -164,6 +166,7 @@ const AWSPluginConfiguration = React.createClass({
             />
 
             <Input
+              id="aws-secret-key"
               type="text"
               label="AWS Secret Key"
               help={
@@ -179,6 +182,7 @@ const AWSPluginConfiguration = React.createClass({
             />
 
             <Input
+              id="aws-lookup-regions"
               type="text"
               label="Lookup regions"
               help={
