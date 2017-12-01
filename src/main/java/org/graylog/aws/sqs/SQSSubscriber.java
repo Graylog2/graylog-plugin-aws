@@ -1,4 +1,4 @@
-package org.graylog.aws.inputs.cloudtrail;
+package org.graylog.aws.sqs;
 
 import com.amazonaws.regions.Region;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class CloudTrailSubscriber extends Thread {
-    private static final Logger LOG = LoggerFactory.getLogger(CloudTrailSubscriber.class);
+public class SQSSubscriber extends Thread {
+    private static final Logger LOG = LoggerFactory.getLogger(SQSSubscriber.class);
 
     public static final int SLEEP_INTERVAL_SECS = 5;
 
@@ -37,8 +37,8 @@ public class CloudTrailSubscriber extends Thread {
     private final HttpUrl proxyUrl;
     private final ObjectMapper objectMapper;
 
-    public CloudTrailSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput,
-                                AWSAuthProvider authProvider, HttpUrl proxyUrl, ObjectMapper objectMapper) {
+    public SQSSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput,
+                         AWSAuthProvider authProvider, HttpUrl proxyUrl, ObjectMapper objectMapper) {
         this.sqsRegion = sqsRegion;
         this.s3Region = s3Region;
         this.queueName = queueName;

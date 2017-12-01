@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.graylog.aws.cloudwatch.CloudWatchLogData;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog2.plugin.Message;
+import org.graylog2.plugin.Tools;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.inputs.codecs.AbstractCodec;
 import org.graylog2.plugin.inputs.codecs.CodecAggregator;
@@ -39,7 +40,11 @@ public abstract class CloudWatchLogDataCodec extends AbstractCodec implements Mu
     @Override
     public Collection<Message> decodeMessages(@Nonnull RawMessage rawMessage) {
         try {
-            final CloudWatchLogData data = objectMapper.readValue(rawMessage.getPayload(), CloudWatchLogData.class);
+            final CloudWatchLogData data = objectMapper.readValue(
+                    Tools.decompressGzip(rawMessage.getPayload()).getBytes(),
+                    CloudWatchLogData.class
+            );
+
             final List<Message> messages = new ArrayList<>(data.logEvents.size());
 
             for (final CloudWatchLogEvent logEvent : data.logEvents) {

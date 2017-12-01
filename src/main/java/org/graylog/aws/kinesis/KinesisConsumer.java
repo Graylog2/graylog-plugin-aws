@@ -105,7 +105,7 @@ public class KinesisConsumer implements Runnable {
                         final byte[] dataBytes = new byte[dataBuffer.remaining()];
                         dataBuffer.get(dataBytes);
 
-                        dataHandler.accept(Tools.decompressGzip(dataBytes).getBytes());
+                        dataHandler.accept(dataBytes);
                     } catch (Exception e) {
                         LOG.error("Couldn't read Kinesis record from stream <{}>", kinesisStreamName, e);
                     }

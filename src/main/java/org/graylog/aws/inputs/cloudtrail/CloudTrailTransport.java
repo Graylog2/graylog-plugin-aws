@@ -11,6 +11,7 @@ import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.plugin.AWSObjectMapper;
+import org.graylog.aws.sqs.SQSSubscriber;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.cluster.ClusterConfigService;
@@ -58,7 +59,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private final ClusterConfigService clusterConfigService;
     private final ObjectMapper objectMapper;
 
-    private CloudTrailSubscriber subscriber;
+    private SQSSubscriber subscriber;
 
     @Inject
     public CloudTrailTransport(@Assisted final Configuration configuration,
@@ -124,7 +125,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
                 input.getConfiguration().getString(CK_ASSUME_ROLE_ARN)
         );
 
-        subscriber = new CloudTrailSubscriber(
+        subscriber = new SQSSubscriber(
                 Region.getRegion(Regions.fromName(sqsRegionName)),
                 Region.getRegion(Regions.fromName(s3RegionName)),
                 input.getConfiguration().getString(CK_SQS_NAME),
