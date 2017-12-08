@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.assistedinject.Assisted;
+import org.graylog.aws.inputs.guardduty.GuardDutyEventParser;
 import org.graylog.aws.inputs.guardduty.json.GuardDutyFinding;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
@@ -30,6 +31,7 @@ public class GuardDutyCodec extends AbstractCodec {
     public static final String NAME = "AWSGuardDuty";
 
     private final ObjectMapper objectMapper;
+    private final GuardDutyEventParser eventParser;;
 
     @Inject
     public GuardDutyCodec(@Assisted Configuration configuration, ObjectMapper objectMapper) {
@@ -37,6 +39,8 @@ public class GuardDutyCodec extends AbstractCodec {
         this.objectMapper = objectMapper;
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
+
+        this.eventParser = new GuardDutyEventParser(objectMapper);
     }
 
     @Nullable
@@ -59,24 +63,13 @@ public class GuardDutyCodec extends AbstractCodec {
                     "aws-guardduty",
                     new DateTime(finding.detail.createdAt));
 
-            message.addFields(buildFields(finding));
+            message.addFields(eventParser.parse(finding));
 
             return message;
         } catch(Exception e) {
             LOG.error("Could not decode GuardDuty finding.", e);
             return null;
         }
-    }
-
-    private Map<String, Object> buildFields(GuardDutyFinding finding) {
-        // ImmutableMap does not allow NULL values and some values might be NULL. Using a HashMap for simplicity.
-        Map<String, Object> fields = Maps.newHashMap();
-        fields.put("account_id", finding.account);
-        fields.put("region", finding.detail.region);
-        fields.put("severity", finding.detail.severity);
-        fields.put("description", finding.detail.description);
-
-        return fields;
     }
 
     @Override
