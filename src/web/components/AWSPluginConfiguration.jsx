@@ -1,11 +1,14 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import createReactClass from 'create-react-class';
 import { Button } from 'react-bootstrap';
 import { BootstrapModalForm, Input } from 'components/bootstrap';
 import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
 
-const AWSPluginConfiguration = React.createClass({
+const AWSPluginConfiguration = createReactClass({
+  displayName: 'AWSPluginConfiguration',
+
   propTypes: {
     config: PropTypes.object,
     updateConfig: PropTypes.func.isRequired,
