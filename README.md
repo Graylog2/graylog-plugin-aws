@@ -81,7 +81,7 @@ Here are required IAM permissions in case you decide to use this feature:
 
 ## FlowLogs setup and configuration
 
-The Flow Logs integration and analysis examples are described in [this graylog.org blog post](https://www.graylog.org/blog/62-a-practical-approach-to-open-source-network-security).
+The Flow Logs integration and analysis examples are described in [this graylog.org blog post](https://www.graylog.org/post/a-practical-approach-to-open-source-network-security-monitoring).
 
 ### Step 1: Enable Flow Logs
 
