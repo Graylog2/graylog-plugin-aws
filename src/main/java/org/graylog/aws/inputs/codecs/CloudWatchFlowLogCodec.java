@@ -7,7 +7,7 @@ import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog.aws.cloudwatch.FlowLogMessage;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.inputs.flowlogs.IANAProtocolNumbers;
-import org.graylog.aws.plugin.AWSObjectMapper;
+import org.graylog.aws.AWSObjectMapper;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationRequest;

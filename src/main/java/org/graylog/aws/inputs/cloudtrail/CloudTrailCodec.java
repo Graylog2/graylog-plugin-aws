@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.AWS;
 import org.graylog.aws.inputs.cloudtrail.json.CloudTrailRecord;
-import org.graylog.aws.plugin.AWSObjectMapper;
+import org.graylog.aws.AWSObjectMapper;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.inputs.annotations.ConfigClass;

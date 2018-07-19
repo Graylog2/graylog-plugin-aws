@@ -1,4 +1,4 @@
-package org.graylog.aws.plugin;
+package org.graylog.aws;
 
 import com.google.inject.BindingAnnotation;
 
