@@ -10,7 +10,7 @@ import com.google.inject.assistedinject.Assisted;
 import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
-import org.graylog.aws.plugin.AWSObjectMapper;
+import org.graylog.aws.AWSObjectMapper;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.cluster.ClusterConfigService;

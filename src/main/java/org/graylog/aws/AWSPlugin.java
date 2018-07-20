@@ -1,4 +1,4 @@
-package org.graylog.aws.plugin;
+package org.graylog.aws;
 
 import com.google.auto.service.AutoService;
 import org.graylog2.plugin.Plugin;
