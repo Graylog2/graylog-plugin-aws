@@ -169,7 +169,7 @@ aws logs put-subscription-filter \
 
 You should now see FlowLogs being written into your Kinesis stream.
 
-### Step 4: Launch input
+### Step 3: Launch input
 
 Now go into the Graylog Web Interface and start a new *AWS FlowLogs input*. It will ask you for some simple parameters like the Kinesis Stream name you are writing your FlowLogs to.
 
