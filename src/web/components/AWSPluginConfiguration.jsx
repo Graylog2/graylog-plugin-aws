@@ -18,7 +18,7 @@ const AWSPluginConfiguration = React.createClass({
         lookup_regions: 'us-east-1,us-west-1,us-west-2,eu-west-1,eu-central-1',
         access_key: '',
         secret_key: '',
-        flowlogs_last_run: '',
+        proxy_enabled: false,
       },
     };
   },
@@ -92,6 +92,13 @@ const AWSPluginConfiguration = React.createClass({
           <dt>Instance detail lookups:</dt>
           <dd>
             {this.state.config.lookups_enabled === true
+              ? 'Enabled'
+              : 'Disabled'}
+          </dd>
+
+          <dt>Connect through proxy:</dt>
+          <dd>
+            {this.state.config.proxy_enabled === true
               ? 'Enabled'
               : 'Disabled'}
           </dd>
@@ -194,6 +201,22 @@ const AWSPluginConfiguration = React.createClass({
               name="lookup_regions"
               value={this.state.config.lookup_regions}
               onChange={this._onUpdate('lookup_regions')}
+            />
+
+            <Input
+              id="aws-proxy-enabled"
+              type="checkbox"
+              ref="proxyEnabled"
+              label="Use HTTP proxy?"
+              help={
+                <span>
+                  When enabled, we'll access the AWS APIs through the HTTP proxy configured (<code>http_proxy_uri</code>)
+                  in your Graylog configuration file.<br/>
+                  <em>Important:</em> You have to restart all AWS inputs for this configuration to take effect.
+                </span>}
+              name="proxy_enabled"
+              checked={this.state.config.proxy_enabled}
+              onChange={this._onCheckboxClick('proxy_enabled', 'proxyEnabled')}
             />
           </fieldset>
         </BootstrapModalForm>
