@@ -79,7 +79,7 @@ Here are required IAM permissions in case you decide to use this feature:
 }
 ```
 
-## FlowLogs setup and configuration
+## Flow Logs setup and configuration
 
 The Flow Logs integration and analysis examples are described in [this graylog.org blog post](https://www.graylog.org/post/a-practical-approach-to-open-source-network-security-monitoring).
 
@@ -156,7 +156,7 @@ Now attach this role:
 
     aws iam put-role-policy --role-name CWLtoKinesisRole --policy-name Permissions-Policy-For-CWL --policy-document file://permissions.json
 
-The last step is to create the actual subscription that will write the FlowLogs to Kinesis:
+The last step is to create the actual subscription that will write the Flow Logs to Kinesis:
 
 ```
 aws logs put-subscription-filter \
@@ -167,11 +167,11 @@ aws logs put-subscription-filter \
     --role-arn "[YOUR IAM ARN HERE]"
 ```
 
-You should now see FlowLogs being written into your Kinesis stream.
+You should now see Flow Logs being written into your Kinesis stream.
 
 ### Step 3: Launch input
 
-Now go into the Graylog Web Interface and start a new *AWS FlowLogs input*. It will ask you for some simple parameters like the Kinesis Stream name you are writing your FlowLogs to.
+Now go into the Graylog Web Interface and start a new *AWS Flow Logs input*. It will ask you for some simple parameters like the Kinesis Stream name you are writing your Flow Logs to.
 
 You should see something like this in your `graylog-server` log file after starting the input:
 
@@ -199,7 +199,8 @@ You should see something like this in your `graylog-server` log file after start
 
 **It will take a few minutes until the first logs are coming in.**
 
-**Important: AWS delivers the FlowLogs with a few minutes delay and not always in an ordered fashion. Keep this in mind when searching over messages in a recent time frame.**
+**Important: AWS delivers Flow Logs intermittently in batches (usually in 5 to 15 minute intervals), and sometimes out of order. Keep this in 
+mind when searching over messages in a recent time frame.**
 
 ## CloudTrail setup and configuration
 
@@ -331,3 +332,21 @@ $ mvn release:perform
 ```
 
 This sets the version numbers, creates a tag and pushes to GitHub. Travis CI will build the release artifacts and upload to GitHub automatically.
+
+### Throttling
+
+The AWS Flow Logs and AWS Logs inputs support the ability to throttle if contention occurs in the Graylog Journal. 
+Throttling will slow the rate of AWS Kinesis stream intake for these inputs by pausing processing until the Journal 
+contention is cleared. If the contention lasts for more than 60 seconds, then the Kinesis consumer will be 
+temporarily stopped until the Journal contention is resolved.   
+
+To enable throttling, edit the input and check the *Allow throttling this input* checkbox. When enabled, the following criteria will
+be used to determine if throttling should occur:
+
+ 1. If there are zero uncommitted entries in the Graylog Journal, throttling will not occur. No further checks will be performed.
+ 2. Throttling will occur if the Journal has more than 100k uncommitted Journal entries. 
+ 3. Throttling will occur if the Journal is growing in size rapidly (approximately 20k entries per second or greater).
+ 4. Throttling will occur if the process ring buffer capacity is zero.
+ 5. Nothing is currently being written to the Journal, throttling will not occur. No further checks will be performed.
+ 6. Throttling will occur if the Journal is more than 90% full.
+ 7. Throttling will occur if the Journal write rate is more than twice as high as the read rate.
