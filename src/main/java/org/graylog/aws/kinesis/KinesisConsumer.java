@@ -23,6 +23,7 @@ import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.config.Proxy;
+import org.graylog.aws.inputs.transports.KinesisTransport;
 import org.graylog2.plugin.Tools;
 import org.graylog2.plugin.system.NodeId;
 import org.joda.time.DateTime;
@@ -39,6 +40,7 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 public class KinesisConsumer implements Runnable {
+    public static final int MAX_THROTTLE_WAIT_MILLIS = 60000;
     private static final Logger LOG = LoggerFactory.getLogger(KinesisConsumer.class);
 
     private final Region region;
@@ -50,6 +52,7 @@ public class KinesisConsumer implements Runnable {
     private final Consumer<byte[]> dataHandler;
 
     private Worker worker;
+    private KinesisTransport transport;
 
     public KinesisConsumer(String kinesisStreamName,
                            Region region,
@@ -57,7 +60,8 @@ public class KinesisConsumer implements Runnable {
                            AWSPluginConfiguration awsConfig,
                            AWSAuthProvider authProvider,
                            NodeId nodeId,
-                           @Nullable HttpUrl proxyUrl) {
+                           @Nullable HttpUrl proxyUrl,
+                           KinesisTransport transport) {
         this.kinesisStreamName = requireNonNull(kinesisStreamName, "kinesisStreamName");
         this.region = requireNonNull(region, "region");
         this.dataHandler = requireNonNull(dataHandler, "dataHandler");
@@ -65,6 +69,7 @@ public class KinesisConsumer implements Runnable {
         this.authProvider = requireNonNull(authProvider, "authProvider");
         this.nodeId = requireNonNull(nodeId, "nodeId");
         this.proxyUrl = proxyUrl;
+        this.transport = transport;
     }
 
     // TODO metrics
@@ -78,7 +83,7 @@ public class KinesisConsumer implements Runnable {
                 kinesisStreamName,
                 authProvider,
                 workerId
-        ).withRegionName(region.getName());
+        ).withRegionName(region.getName()).withMaxRecords(1);
 
         // Optional HTTP proxy
         if (awsConfig.proxyEnabled() && proxyUrl != null) {
@@ -95,7 +100,25 @@ public class KinesisConsumer implements Runnable {
 
             @Override
             public void processRecords(ProcessRecordsInput processRecordsInput) {
-                LOG.debug("Received {} Kinesis events", processRecordsInput.getRecords().size());
+
+                LOG.info("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size());
+
+                if (transport.isThrottled()) {
+                    // Wait if the input is throttled. The max we can wait is 60 seconds (keeps Kinesis processor thread healthy)
+                    LOG.info("[throttled] waiting up to [{}ms] for throttling to clear.", MAX_THROTTLE_WAIT_MILLIS);
+                    if (!transport.blockUntilUnthrottled(MAX_THROTTLE_WAIT_MILLIS, TimeUnit.MILLISECONDS)) {
+                        LOG.info("Throttling did not clear in [{}]ms. Stopping the Kinesis worker to let the " +
+                                 "journal clear out.️ It will start again in 5 five minutes.");
+                        worker.shutdown();
+
+                        // Request restart in 5 minutes. Let this thread exit.
+                        transport.stoppedDueToThrottling.set(true);
+                        return;
+                    }
+
+                    LOG.info("[unthrottled] transport will resume processing records.");
+                    return;
+                }
 
                 for (Record record : processRecordsInput.getRecords()) {
                     try {
@@ -165,7 +188,12 @@ public class KinesisConsumer implements Runnable {
                 .config(config)
                 .build();
 
+        LOG.info("☀️ Before Run"); // TODO remove
         worker.run();
+        LOG.info("🌅️ After Run"); // TODO remove
+
+        // Ask Transport to restart if stopped due to throttling.
+        transport.requestRestartWhenUnthrottled();
     }
 
     public void stop() {

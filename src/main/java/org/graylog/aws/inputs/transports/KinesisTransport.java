@@ -4,6 +4,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.codahale.metrics.MetricSet;
 import com.google.common.collect.Maps;
+import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
 import okhttp3.HttpUrl;
@@ -33,9 +34,11 @@ import javax.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-public class KinesisTransport implements Transport {
+public class KinesisTransport extends ThrottleableTransport {
     private static final Logger LOG = LoggerFactory.getLogger(KinesisTransport.class);
     public static final String NAME = "awskinesis";
 
@@ -52,13 +55,19 @@ public class KinesisTransport implements Transport {
     private final ClusterConfigService clusterConfigService;
 
     private KinesisConsumer reader;
+    ExecutorService kinesisExecutorService = null;
+    Future<?> kinesisExecutorFuture = null;
+
+    public AtomicBoolean stoppedDueToThrottling = new AtomicBoolean(false);
 
     @Inject
     public KinesisTransport(@Assisted final Configuration configuration,
+                            EventBus serverEventBus,
                             org.graylog2.Configuration graylogConfiguration,
                             final ClusterConfigService clusterConfigService,
                             final NodeId nodeId,
                             LocalMetricRegistry localRegistry) {
+        super(serverEventBus, configuration);
         this.clusterConfigService = clusterConfigService;
         this.configuration = configuration;
         this.graylogConfiguration = graylogConfiguration;
@@ -66,16 +75,31 @@ public class KinesisTransport implements Transport {
         this.localRegistry = localRegistry;
     }
 
+    /**
+     * Called after the Kinesis consumer executor thread terminates. If the thread was terminated due to throttling,
+     * it will be restarted once the throttle state has been cleared.
+     */
+    public void requestRestartWhenUnthrottled() {
+
+        /* The Atomic boolean {@code stoppedDueToThrottling} is only true when the Kinesis consumer has been stopped
+         * due to being throttled. */
+        if (stoppedDueToThrottling.get()) {
+            LOG.info("[throttled] The Kinesis consumer is currently in a throttled state, so the consumer has been " +
+                     "temporarily stopped. Once unthrottled, the consumer will be restarted and message processing " +
+                     "will begin again.");
+            blockUntilUnthrottled();
+
+            LOG.info("[unthrottled] Restarting Kinesis consumer.");
+            stoppedDueToThrottling.set(true);
+            kinesisExecutorService.submit(KinesisTransport.this.reader);
+        }
+    }
+
     @Override
-    public void launch(MessageInput input) throws MisfireException {
-        ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
-                .setDaemon(true)
-                .setNameFormat("aws-kinesis-reader-%d")
-                .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS Kinesis reader.", e))
-                .build());
+    public void doLaunch(MessageInput input) throws MisfireException {
 
         final AWSPluginConfiguration awsConfig = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
-                AWSPluginConfiguration.createDefault());
+                                                                                   AWSPluginConfiguration.createDefault());
         AWSAuthProvider authProvider = new AWSAuthProvider(
                 awsConfig, configuration.getString(CK_ACCESS_KEY),
                 configuration.getString(CK_SECRET_KEY),
@@ -90,12 +114,21 @@ public class KinesisTransport implements Transport {
                 awsConfig,
                 authProvider,
                 nodeId,
-                graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(graylogConfiguration.getHttpProxyUri())
-        );
+                graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(graylogConfiguration.getHttpProxyUri()),
+                this);
 
         LOG.info("Starting Kinesis reader thread for input [{}/{}]", input.getName(), input.getId());
 
-        executor.submit(this.reader);
+        kinesisExecutorService = getExecutorService();
+        kinesisExecutorFuture = kinesisExecutorService.submit(this.reader);
+    }
+
+    private ExecutorService getExecutorService() {
+        return Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+                                                         .setDaemon(true)
+                                                         .setNameFormat("aws-kinesis-reader-%d")
+                                                         .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS Kinesis reader.", e))
+                                                         .build());
     }
 
     private Consumer<byte[]> kinesisCallback(final MessageInput input) {
@@ -103,8 +136,8 @@ public class KinesisTransport implements Transport {
     }
 
     @Override
-    public void stop() {
-        if(this.reader != null) {
+    public void doStop() {
+        if (this.reader != null) {
             this.reader.stop();
         }
     }
@@ -184,5 +217,4 @@ public class KinesisTransport implements Transport {
             return r;
         }
     }
-
 }
