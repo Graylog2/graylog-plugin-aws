@@ -58,6 +58,10 @@ public class KinesisTransport extends ThrottleableTransport {
     ExecutorService kinesisExecutorService = null;
     Future<?> kinesisExecutorFuture = null;
 
+    /**
+     * Indicates if the Kinesis consumer has been stopped due to throttling. Allows the consumer to be restarted
+     * once throttling is cleared.
+     */
     public AtomicBoolean stoppedDueToThrottling = new AtomicBoolean(false);
 
     @Inject
@@ -77,7 +81,7 @@ public class KinesisTransport extends ThrottleableTransport {
 
     /**
      * Called after the Kinesis consumer executor thread terminates. If the thread was terminated due to throttling,
-     * it will be restarted once the throttle state has been cleared.
+     * it will restart automatically once throttling has been cleared.
      */
     public void requestRestartWhenUnthrottled() {
 

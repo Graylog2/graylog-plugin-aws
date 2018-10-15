@@ -103,20 +103,28 @@ public class KinesisConsumer implements Runnable {
 
                 LOG.info("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size());
 
-                if (transport.isThrottled()) {
-                    // Wait if the input is throttled. The max we can wait is 60 seconds (keeps Kinesis processor thread healthy)
-                    LOG.info("[throttled] waiting up to [{}ms] for throttling to clear.", MAX_THROTTLE_WAIT_MILLIS);
-                    if (!transport.blockUntilUnthrottled(MAX_THROTTLE_WAIT_MILLIS, TimeUnit.MILLISECONDS)) {
-                        LOG.info("Throttling did not clear in [{}]ms. Stopping the Kinesis worker to let the " +
-                                 "journal clear out.️ It will start again in 5 five minutes.");
-                        worker.shutdown();
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
 
-                        // Request restart in 5 minutes. Let this thread exit.
+                if (transport.isThrottled()) {
+                    LOG.info("[throttled] Waiting up to [{}ms] for throttling to clear.", MAX_THROTTLE_WAIT_MILLIS);
+                    if (!transport.blockUntilUnthrottled(MAX_THROTTLE_WAIT_MILLIS, TimeUnit.MILLISECONDS)) {
+
+                        /* Stop the Kinesis consumer when throttling does not clear quickly. The AWS Kinesis client
+                         * requires that the worker thread stays healthy and does not take too long to respond.
+                         * So, if we need to wait a long time for throttling to clear (eg. more than 1 minute), then the
+                         * consumer needs to be shutdown and restarted later once throttling clears. */
+                        LOG.info("[throttled] Throttling did not clear in [{}]ms. Stopping the Kinesis worker to let " +
+                                 "the throttle clear.️ It will start again automatically once throttling clears.");
+                        worker.shutdown();
                         transport.stoppedDueToThrottling.set(true);
                         return;
                     }
 
-                    LOG.info("[unthrottled] transport will resume processing records.");
+                    LOG.info("[unthrottled] Kinesis consumer will now resume processing records.");
                     return;
                 }
 
@@ -188,9 +196,9 @@ public class KinesisConsumer implements Runnable {
                 .config(config)
                 .build();
 
-        LOG.info("☀️ Before Run"); // TODO remove
+        LOG.info("☀️ Before Run"); // TODO remove - for throttling testing only
         worker.run();
-        LOG.info("🌅️ After Run"); // TODO remove
+        LOG.info("🌅️ After Run"); // TODO remove - for throttling testing only
 
         // Ask Transport to restart if stopped due to throttling.
         transport.requestRestartWhenUnthrottled();
