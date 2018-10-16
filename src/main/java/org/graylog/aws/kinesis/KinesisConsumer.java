@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 public class KinesisConsumer implements Runnable {
-    public static final int MAX_THROTTLE_WAIT_MILLIS = 60000;
+
     private static final Logger LOG = LoggerFactory.getLogger(KinesisConsumer.class);
 
     private final Region region;
@@ -50,6 +50,8 @@ public class KinesisConsumer implements Runnable {
     private final HttpUrl proxyUrl;
     private final AWSPluginConfiguration awsConfig;
     private final Consumer<byte[]> dataHandler;
+    private final Integer maxThrottledWaitMillis;
+    private final Integer recordBatchSize;
 
     private Worker worker;
     private KinesisTransport transport;
@@ -61,7 +63,9 @@ public class KinesisConsumer implements Runnable {
                            AWSAuthProvider authProvider,
                            NodeId nodeId,
                            @Nullable HttpUrl proxyUrl,
-                           KinesisTransport transport) {
+                           KinesisTransport transport,
+                           Integer maxThrottledWaitMillis,
+                           Integer recordBatchSize) {
         this.kinesisStreamName = requireNonNull(kinesisStreamName, "kinesisStreamName");
         this.region = requireNonNull(region, "region");
         this.dataHandler = requireNonNull(dataHandler, "dataHandler");
@@ -70,20 +74,33 @@ public class KinesisConsumer implements Runnable {
         this.nodeId = requireNonNull(nodeId, "nodeId");
         this.proxyUrl = proxyUrl;
         this.transport = transport;
+        this.recordBatchSize = recordBatchSize;
+
+        // Use default throttled time of 60 seconds if not specified in configuration.
+        this.maxThrottledWaitMillis =
+                maxThrottledWaitMillis != null ? maxThrottledWaitMillis : KinesisTransport.DEFAULT_THROTTLED_WAIT;
     }
 
     // TODO metrics
     public void run() {
+
+        LOG.info("Max wait millis [{}]", maxThrottledWaitMillis);
+        LOG.info("Record batch size [{}]", recordBatchSize);
+
         final String workerId = String.format(Locale.ENGLISH, "graylog-node-%s", nodeId.anonymize());
-        final KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(
-                // The application name needs to be unique per input. Using the same name for two different Kinesis
-                // streams will cause trouble with state handling in DynamoDB. (used by the Kinesis client under the
-                // hood to keep state)
-                String.format(Locale.ENGLISH, "graylog-aws-plugin-%s", kinesisStreamName),
-                kinesisStreamName,
-                authProvider,
-                workerId
-        ).withRegionName(region.getName()).withMaxRecords(1);
+
+        // The application name needs to be unique per input. Using the same name for two different Kinesis
+        // streams will cause trouble with state handling in DynamoDB. (used by the Kinesis client under the
+        // hood to keep state)
+        final String applicationName = String.format(Locale.ENGLISH, "graylog-aws-plugin-%s", kinesisStreamName);
+        KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(applicationName, kinesisStreamName,
+                                                                                 authProvider, workerId);
+        config.withRegionName(region.getName());
+
+        // Default max records is 10k. Can be overridden from UI.
+        if (recordBatchSize != null) {
+            config.withMaxRecords(1);
+        }
 
         // Optional HTTP proxy
         if (awsConfig.proxyEnabled() && proxyUrl != null) {
@@ -110,8 +127,8 @@ public class KinesisConsumer implements Runnable {
                 }
 
                 if (transport.isThrottled()) {
-                    LOG.info("[throttled] Waiting up to [{}ms] for throttling to clear.", MAX_THROTTLE_WAIT_MILLIS);
-                    if (!transport.blockUntilUnthrottled(MAX_THROTTLE_WAIT_MILLIS, TimeUnit.MILLISECONDS)) {
+                    LOG.info("[throttled] Waiting up to [{}ms] for throttling to clear.", maxThrottledWaitMillis);
+                    if (!transport.blockUntilUnthrottled(maxThrottledWaitMillis, TimeUnit.MILLISECONDS)) {
 
                         /* Stop the Kinesis consumer when throttling does not clear quickly. The AWS Kinesis client
                          * requires that the worker thread stays healthy and does not take too long to respond.
@@ -125,6 +142,10 @@ public class KinesisConsumer implements Runnable {
                     }
 
                     LOG.info("[unthrottled] Kinesis consumer will now resume processing records.");
+                }
+
+                // TODO remove. Skip processing records until throttling code is finalized.
+                if (true) {
                     return;
                 }
 
