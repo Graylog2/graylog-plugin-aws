@@ -33,11 +33,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+
+import static org.graylog.aws.inputs.transports.KinesisTransportState.STOPPED;
 
 public class KinesisTransport extends ThrottleableTransport {
     private static final Logger LOG = LoggerFactory.getLogger(KinesisTransport.class);
@@ -53,6 +57,7 @@ public class KinesisTransport extends ThrottleableTransport {
 
     public static final int DEFAULT_THROTTLED_WAIT = 60000;
     public static final int DEFAULT_BATCH_SIZE = 10000;
+    public static final int KINESIS_CONSUMER_STOP_WAIT_MS = 15000;
 
     private final Configuration configuration;
     private final org.graylog2.Configuration graylogConfiguration;
@@ -69,6 +74,7 @@ public class KinesisTransport extends ThrottleableTransport {
      * once throttling is cleared.
      */
     public AtomicBoolean stoppedDueToThrottling = new AtomicBoolean(false);
+    public KinesisTransportState transportState = STOPPED;
 
     @Inject
     public KinesisTransport(@Assisted final Configuration configuration,
@@ -85,24 +91,47 @@ public class KinesisTransport extends ThrottleableTransport {
         this.localRegistry = localRegistry;
     }
 
-    /**
-     * Called after the Kinesis consumer executor thread terminates. If the thread was terminated due to throttling,
-     * it will restart automatically once throttling has been cleared.
-     */
-    public void requestRestartWhenUnthrottled() {
+    @Override
+    public void handleChangedThrottledState(boolean isThrottled) {
 
-        /* The Atomic boolean {@code stoppedDueToThrottling} is only true when the Kinesis consumer has been stopped
-         * due to being throttled. */
-        if (stoppedDueToThrottling.get()) {
-            LOG.info("[throttled] The Kinesis consumer is currently in a throttled state, so the consumer has been " +
-                     "temporarily stopped. Once unthrottled, the consumer will be restarted and message processing " +
-                     "will begin again.");
-            blockUntilUnthrottled();
+        if (!isThrottled && stoppedDueToThrottling.get()) {
 
-            LOG.info("[unthrottled] Restarting Kinesis consumer.");
-            stoppedDueToThrottling.set(true);
-            kinesisExecutorService.submit(KinesisTransport.this.reader);
+            stoppedDueToThrottling.set(false);
+
+            LOG.info("Transport state [{}]", transportState);
+
+            switch (transportState) {
+                case STOPPED:
+                    LOG.info("[unthrottled] Throttle start ended restarting consumer");
+                    restartConsumer();
+                    break;
+                case STOPPING: {
+
+                    LOG.info("Transport is still stopping. Waiting [{}ms] for the consumer to stop", KINESIS_CONSUMER_STOP_WAIT_MS);
+                    // Wait up to 15 seconds for consumer to stop.
+                    new Timer().schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            if (transportState == KinesisTransportState.STOPPED) {
+                                restartConsumer();
+                            } else {
+                                LOG.error("Could not restart Kinesis consumer, because the previously running " +
+                                          "consumer did not reach a STOPPED state within [{}ms].", KINESIS_CONSUMER_STOP_WAIT_MS);
+                            }
+                        }
+                    }, KINESIS_CONSUMER_STOP_WAIT_MS);
+                }
+            }
+
         }
+    }
+
+    private void restartConsumer() {
+        if (kinesisExecutorFuture.isDone()) {
+            kinesisExecutorFuture.cancel(true);
+        }
+
+        kinesisExecutorFuture = kinesisExecutorService.submit(KinesisTransport.this.reader);
     }
 
     @Override
@@ -127,7 +156,7 @@ public class KinesisTransport extends ThrottleableTransport {
                 graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(graylogConfiguration.getHttpProxyUri()),
                 this,
                 configuration.intIsSet(CK_KINESIS_MAX_THROTTLED_WAIT_MS) ? configuration.getInt(CK_KINESIS_MAX_THROTTLED_WAIT_MS) : null,
-                configuration.intIsSet(CK_KINESIS_RECORD_BATCH_SIZE) ? configuration.getInt(CK_KINESIS_RECORD_BATCH_SIZE) : null );
+                configuration.intIsSet(CK_KINESIS_RECORD_BATCH_SIZE) ? configuration.getInt(CK_KINESIS_RECORD_BATCH_SIZE) : null);
 
         LOG.info("Starting Kinesis reader thread for input [{}/{}]", input.getName(), input.getId());
 
@@ -150,6 +179,7 @@ public class KinesisTransport extends ThrottleableTransport {
     @Override
     public void doStop() {
         if (this.reader != null) {
+            this.stoppedDueToThrottling.set(false); // Prevent restart of consumer when input is shutting down.
             this.reader.stop();
         }
     }
