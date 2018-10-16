@@ -345,9 +345,9 @@ To enable throttling, edit the input and check the *Allow throttling this input*
 be used to determine if throttling should occur:
 
  1. If there are zero uncommitted entries in the Graylog Journal, throttling will not occur. No further checks will be performed.
- 2. Throttling will occur if the Journal has more than 100k uncommitted Journal entries. 
+ 2. Throttling will occur if the Journal has more than 100k uncommitted entries. 
  3. Throttling will occur if the Journal is growing in size rapidly (approximately 20k entries per second or greater).
- 4. Throttling will occur if the process ring buffer capacity is zero.
+ 4. Throttling will occur if the process ring buffer is full.
  5. Nothing is currently being written to the Journal, throttling will not occur. No further checks will be performed.
  6. Throttling will occur if the Journal is more than 90% full.
  7. Throttling will occur if the Journal write rate is more than twice as high as the read rate.
