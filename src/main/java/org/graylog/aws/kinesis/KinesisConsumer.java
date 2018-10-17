@@ -85,7 +85,7 @@ public class KinesisConsumer implements Runnable {
     // TODO metrics
     public void run() {
 
-        transport.transportState = KinesisTransportState.STARTING;
+        transport.consumerState = KinesisTransportState.STARTING;
 
         LOG.info("Max wait millis [{}]", maxThrottledWaitMillis);
         LOG.info("Record batch size [{}]", recordBatchSize);
@@ -116,18 +116,13 @@ public class KinesisConsumer implements Runnable {
             @Override
             public void initialize(InitializationInput initializationInput) {
                 LOG.info("Initializing Kinesis worker for stream <{}>", kinesisStreamName);
-                transport.transportState = KinesisTransportState.RUNNING;
+                transport.consumerState = KinesisTransportState.RUNNING;
             }
 
             @Override
             public void processRecords(ProcessRecordsInput processRecordsInput) {
 
                 LOG.info("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size());
-//                try {
-//                    Thread.sleep(20000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
 
                 if (transport.isThrottled()) {
                     LOG.info("[throttled] Waiting up to [{}ms] for throttling to clear.", maxThrottledWaitMillis);
@@ -139,7 +134,7 @@ public class KinesisConsumer implements Runnable {
                          * consumer needs to be shutdown and restarted later once throttling clears. */
                         LOG.info("[throttled] Throttling did not clear in [{}]ms. Stopping the Kinesis worker to let " +
                                  "the throttle clear.️ It will start again automatically once throttling clears.");
-                        transport.transportState = KinesisTransportState.STOPPING;
+                        transport.consumerState = KinesisTransportState.STOPPING;
                         worker.shutdown();
                         transport.stoppedDueToThrottling.set(true);
                         return;
@@ -223,13 +218,12 @@ public class KinesisConsumer implements Runnable {
 
         LOG.info("☀️ Before Run"); // TODO remove - for throttling testing only
         worker.run();
-        transport.transportState = KinesisTransportState.STOPPED;
+        transport.consumerState = KinesisTransportState.STOPPED;
         LOG.info("🌅️ After Run"); // TODO remove - for throttling testing only
     }
 
     public void stop() {
         if (worker != null) {
-            transport.transportState = KinesisTransportState.STOPPING;
             worker.shutdown();
         }
     }

@@ -66,15 +66,15 @@ public class KinesisTransport extends ThrottleableTransport {
     private final ClusterConfigService clusterConfigService;
 
     private KinesisConsumer reader;
-    ExecutorService kinesisExecutorService = null;
-    Future<?> kinesisExecutorFuture = null;
+    ExecutorService executor = null;
+    public Future<?> kinesisTaskFuture = null;
 
     /**
      * Indicates if the Kinesis consumer has been stopped due to throttling. Allows the consumer to be restarted
      * once throttling is cleared.
      */
     public AtomicBoolean stoppedDueToThrottling = new AtomicBoolean(false);
-    public KinesisTransportState transportState = STOPPED;
+    public KinesisTransportState consumerState = STOPPED;
 
     @Inject
     public KinesisTransport(@Assisted final Configuration configuration,
@@ -94,25 +94,33 @@ public class KinesisTransport extends ThrottleableTransport {
     @Override
     public void handleChangedThrottledState(boolean isThrottled) {
 
+        // TODO: Change from info -> debug logs.
+        if (!isThrottled) {
+            LOG.info("✅ Unthrottled");
+        }
+        else{
+            LOG.info("❗Throttled");
+        }
+
         if (!isThrottled && stoppedDueToThrottling.get()) {
 
             stoppedDueToThrottling.set(false);
 
-            LOG.info("Transport state [{}]", transportState);
+            LOG.debug("Transport state [{}]", consumerState);
 
-            switch (transportState) {
+            switch (consumerState) {
                 case STOPPED:
                     LOG.info("[unthrottled] Throttle start ended restarting consumer");
                     restartConsumer();
                     break;
                 case STOPPING: {
 
-                    LOG.info("Transport is still stopping. Waiting [{}ms] for the consumer to stop", KINESIS_CONSUMER_STOP_WAIT_MS);
+                    LOG.info("Transport is still stopping. Waiting [{}ms] for the consumer to finish stopping before restarting.", KINESIS_CONSUMER_STOP_WAIT_MS);
                     // Wait up to 15 seconds for consumer to stop.
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
-                            if (transportState == KinesisTransportState.STOPPED) {
+                            if (consumerState == KinesisTransportState.STOPPED) {
                                 restartConsumer();
                             } else {
                                 LOG.error("Could not restart Kinesis consumer, because the previously running " +
@@ -127,11 +135,7 @@ public class KinesisTransport extends ThrottleableTransport {
     }
 
     private void restartConsumer() {
-        if (kinesisExecutorFuture.isDone()) {
-            kinesisExecutorFuture.cancel(true);
-        }
-
-        kinesisExecutorFuture = kinesisExecutorService.submit(KinesisTransport.this.reader);
+        kinesisTaskFuture = executor.submit(KinesisTransport.this.reader);
     }
 
     @Override
@@ -160,8 +164,8 @@ public class KinesisTransport extends ThrottleableTransport {
 
         LOG.info("Starting Kinesis reader thread for input [{}/{}]", input.getName(), input.getId());
 
-        kinesisExecutorService = getExecutorService();
-        kinesisExecutorFuture = kinesisExecutorService.submit(this.reader);
+        executor = getExecutorService();
+        kinesisTaskFuture = executor.submit(this.reader);
     }
 
     private ExecutorService getExecutorService() {
