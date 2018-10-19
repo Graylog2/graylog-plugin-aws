@@ -94,12 +94,11 @@ public class KinesisTransport extends ThrottleableTransport {
     @Override
     public void handleChangedThrottledState(boolean isThrottled) {
 
-        // TODO: Change from info -> debug logs.
         if (!isThrottled) {
-            LOG.info("✅ Unthrottled");
+            LOG.debug("✅ Unthrottled");
         }
         else{
-            LOG.info("❗Throttled");
+            LOG.debug("❗Throttled");
         }
 
         if (!isThrottled && stoppedDueToThrottling.get()) {
@@ -110,19 +109,20 @@ public class KinesisTransport extends ThrottleableTransport {
 
             switch (consumerState) {
                 case STOPPED:
-                    LOG.info("[unthrottled] Throttle start ended restarting consumer");
+                    LOG.info("[unthrottled] Throttle state ended restarting consumer");
                     restartConsumer();
                     break;
                 case STOPPING: {
 
-                    LOG.info("Transport is still stopping. Waiting [{}ms] for the consumer to finish stopping before restarting.", KINESIS_CONSUMER_STOP_WAIT_MS);
-                    // Wait up to 15 seconds for consumer to stop.
+                    LOG.info("Kinesis consumer is still stopping. Waiting [{}ms] for the consumer to finish " +
+                             "stopping before restarting.", KINESIS_CONSUMER_STOP_WAIT_MS);
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
                             if (consumerState == KinesisTransportState.STOPPED) {
                                 restartConsumer();
                             } else {
+                                // TODO: Do we need to do something special in this case? Wait longer? Probably.
                                 LOG.error("Could not restart Kinesis consumer, because the previously running " +
                                           "consumer did not reach a STOPPED state within [{}ms].", KINESIS_CONSUMER_STOP_WAIT_MS);
                             }

@@ -42,7 +42,7 @@ public abstract class CloudWatchLogDataCodec extends AbstractCodec implements Mu
             final CloudWatchLogData data = objectMapper.readValue(rawMessage.getPayload(), CloudWatchLogData.class);
             final List<Message> messages = new ArrayList<>(data.logEvents.size());
 
-            LOG.info(String.format("[%d] messages received.", data.logEvents.size()));
+            LOG.debug(String.format("[%d] Kinesis messages received.", data.logEvents.size()));
             for (final CloudWatchLogEvent logEvent : data.logEvents) {
                 try {
                     final Message message = decodeLogData(logEvent, data.logGroup, data.logStream);

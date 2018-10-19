@@ -57,6 +57,12 @@ public class KinesisConsumer implements Runnable {
     private Worker worker;
     private KinesisTransport transport;
 
+    /**
+     * Checkpointing must be performed when the KinesisConsumer needs to be shuts down due to sustained throttling.
+     * At the time when shutdown occurs, checkpointing might not have happened for a while, so we keep track of the
+     * last sequence to checkpoint to. */
+    private String lastSuccessfulRecordSequence = null;
+
     public KinesisConsumer(String kinesisStreamName,
                            Region region,
                            Consumer<byte[]> dataHandler,
@@ -87,8 +93,8 @@ public class KinesisConsumer implements Runnable {
 
         transport.consumerState = KinesisTransportState.STARTING;
 
-        LOG.info("Max wait millis [{}]", maxThrottledWaitMillis);
-        LOG.info("Record batch size [{}]", recordBatchSize);
+        LOG.debug("Max wait millis [{}]", maxThrottledWaitMillis);
+        LOG.debug("Record batch size [{}]", recordBatchSize);
 
         final String workerId = String.format(Locale.ENGLISH, "graylog-node-%s", nodeId.anonymize());
 
@@ -100,9 +106,9 @@ public class KinesisConsumer implements Runnable {
                                                                                  authProvider, workerId);
         config.withRegionName(region.getName());
 
-        // Default max records is 10k. Can be overridden from UI.
+        // Default max records is 10k. This can be overridden from UI.
         if (recordBatchSize != null) {
-            config.withMaxRecords(1);
+            config.withMaxRecords(recordBatchSize);
         }
 
         // Optional HTTP proxy
@@ -115,14 +121,14 @@ public class KinesisConsumer implements Runnable {
 
             @Override
             public void initialize(InitializationInput initializationInput) {
-                LOG.info("Initializing Kinesis worker for stream <{}>", kinesisStreamName);
+                LOG.debug("Initializing Kinesis worker for stream <{}>", kinesisStreamName);
                 transport.consumerState = KinesisTransportState.RUNNING;
             }
 
             @Override
             public void processRecords(ProcessRecordsInput processRecordsInput) {
 
-                LOG.info("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size());
+                LOG.debug("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size() * 1024);
 
                 if (transport.isThrottled()) {
                     LOG.info("[throttled] Waiting up to [{}ms] for throttling to clear.", maxThrottledWaitMillis);
@@ -133,7 +139,13 @@ public class KinesisConsumer implements Runnable {
                          * So, if we need to wait a long time for throttling to clear (eg. more than 1 minute), then the
                          * consumer needs to be shutdown and restarted later once throttling clears. */
                         LOG.info("[throttled] Throttling did not clear in [{}]ms. Stopping the Kinesis worker to let " +
-                                 "the throttle clear.️ It will start again automatically once throttling clears.");
+                                 "the throttle clear.️ It will start again automatically once throttling clears.", maxThrottledWaitMillis);
+
+                        // Checkpoint last processed record before shutting down.
+                        if (lastSuccessfulRecordSequence != null) {
+                            checkpoint(processRecordsInput, lastSuccessfulRecordSequence);
+                        }
+
                         transport.consumerState = KinesisTransportState.STOPPING;
                         worker.shutdown();
                         transport.stoppedDueToThrottling.set(true);
@@ -141,11 +153,6 @@ public class KinesisConsumer implements Runnable {
                     }
 
                     LOG.info("[unthrottled] Kinesis consumer will now resume processing records.");
-                }
-
-                // TODO remove. Skip processing records until throttling code is finalized.
-                if (true) {
-                    return;
                 }
 
                 for (Record record : processRecordsInput.getRecords()) {
@@ -157,6 +164,7 @@ public class KinesisConsumer implements Runnable {
                         dataBuffer.get(dataBytes);
 
                         dataHandler.accept(Tools.decompressGzip(dataBytes).getBytes());
+                        lastSuccessfulRecordSequence = record.getSequenceNumber();
                     } catch (Exception e) {
                         LOG.error("Couldn't read Kinesis record from stream <{}>", kinesisStreamName, e);
                     }
@@ -168,11 +176,11 @@ public class KinesisConsumer implements Runnable {
                 if (lastCheckpoint.plusMinutes(1).isBeforeNow()) {
                     lastCheckpoint = DateTime.now();
                     LOG.debug("Checkpointing stream <{}>", kinesisStreamName);
-                    checkpoint(processRecordsInput);
+                    checkpoint(processRecordsInput, null);
                 }
             }
 
-            private void checkpoint(ProcessRecordsInput processRecordsInput) {
+            private void checkpoint(ProcessRecordsInput processRecordsInput, String lastSequence) {
                 final Retryer<Void> retryer = RetryerBuilder.<Void>newBuilder()
                         .retryIfExceptionOfType(ThrottlingException.class)
                         .withWaitStrategy(WaitStrategies.fixedWait(1, TimeUnit.SECONDS))
@@ -190,7 +198,11 @@ public class KinesisConsumer implements Runnable {
                 try {
                     retryer.call(() -> {
                         try {
-                            processRecordsInput.getCheckpointer().checkpoint();
+                            if (lastSequence != null) {
+                                processRecordsInput.getCheckpointer().checkpoint(lastSequence);
+                            } else {
+                                processRecordsInput.getCheckpointer().checkpoint();
+                            }
                         } catch (InvalidStateException e) {
                             LOG.error("Couldn't save checkpoint to DynamoDB table used by the Kinesis client library - check database table", e);
                         } catch (ShutdownException e) {
@@ -216,10 +228,10 @@ public class KinesisConsumer implements Runnable {
                 .config(config)
                 .build();
 
-        LOG.info("☀️ Before Run"); // TODO remove - for throttling testing only
+        LOG.debug("☀️ Before Kinesis worker runs");
         worker.run();
         transport.consumerState = KinesisTransportState.STOPPED;
-        LOG.info("🌅️ After Run"); // TODO remove - for throttling testing only
+        LOG.debug("🌅️ Before Kinesis worker runs");
     }
 
     public void stop() {
