@@ -12,6 +12,7 @@ import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput;
 import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput;
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput;
 import com.amazonaws.services.kinesis.model.Record;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.rholder.retry.Attempt;
 import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.RetryListener;
@@ -21,6 +22,8 @@ import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
 import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
+import org.graylog.aws.cloudwatch.CloudWatchLogData;
+import org.graylog.aws.cloudwatch.CloudWatchLogEntry;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.config.Proxy;
 import org.graylog.aws.inputs.transports.KinesisTransport;
@@ -33,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +60,7 @@ public class KinesisConsumer implements Runnable {
 
     private Worker worker;
     private KinesisTransport transport;
-
+    private final ObjectMapper objectMapper;
     /**
      * Checkpointing must be performed when the KinesisConsumer needs to be shuts down due to sustained throttling.
      * At the time when shutdown occurs, checkpointing might not have happened for a while, so we keep track of the
@@ -71,6 +75,7 @@ public class KinesisConsumer implements Runnable {
                            NodeId nodeId,
                            @Nullable HttpUrl proxyUrl,
                            KinesisTransport transport,
+                           ObjectMapper objectMapper,
                            Integer maxThrottledWaitMillis,
                            Integer recordBatchSize) {
         this.kinesisStreamName = requireNonNull(kinesisStreamName, "kinesisStreamName");
@@ -81,6 +86,7 @@ public class KinesisConsumer implements Runnable {
         this.nodeId = requireNonNull(nodeId, "nodeId");
         this.proxyUrl = proxyUrl;
         this.transport = transport;
+        this.objectMapper = objectMapper;
         this.recordBatchSize = recordBatchSize;
 
         // Use default throttled time of 60 seconds if not specified in configuration.
@@ -128,7 +134,7 @@ public class KinesisConsumer implements Runnable {
             @Override
             public void processRecords(ProcessRecordsInput processRecordsInput) {
 
-                LOG.debug("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size() * 1024);
+                LOG.info("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size() * 1024);
 
                 if (transport.isThrottled()) {
                     LOG.info("[throttled] Waiting up to [{}ms] for throttling to clear.", maxThrottledWaitMillis);
@@ -163,7 +169,20 @@ public class KinesisConsumer implements Runnable {
                         final byte[] dataBytes = new byte[dataBuffer.remaining()];
                         dataBuffer.get(dataBytes);
 
-                        dataHandler.accept(Tools.decompressGzip(dataBytes).getBytes());
+                        // Decompress response.
+                        final byte[] bytes = Tools.decompressGzip(dataBytes).getBytes();
+
+                        // Extract messages, so that they can be committed to journal one by one.
+                        final CloudWatchLogData data = objectMapper.readValue(bytes, CloudWatchLogData.class);
+                        Iterator<CloudWatchLogEntry> iterator =
+                                data.logEvents.stream().map(le -> new CloudWatchLogEntry( data.logGroup, data.logStream, le.timestamp, le.message)).iterator();
+
+                        // Push all messages to the Journal.
+                        while (iterator.hasNext()) {
+                            CloudWatchLogEntry next = iterator.next();
+                            dataHandler.accept(objectMapper.writeValueAsBytes(next));
+                        }
+
                         lastSuccessfulRecordSequence = record.getSequenceNumber();
                     } catch (Exception e) {
                         LOG.error("Couldn't read Kinesis record from stream <{}>", kinesisStreamName, e);

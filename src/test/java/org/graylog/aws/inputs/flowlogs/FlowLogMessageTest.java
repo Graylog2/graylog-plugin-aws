@@ -1,7 +1,8 @@
 package org.graylog.aws.inputs.flowlogs;
 
-import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
+import org.graylog.aws.cloudwatch.CloudWatchLogEntry;
 import org.graylog.aws.cloudwatch.FlowLogMessage;
+import org.joda.time.DateTime;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -11,7 +12,6 @@ public class FlowLogMessageTest {
 
     @Test
     public void testFromPartsDoesNotFailWithMissingIntegerFields() throws Exception {
-        final CloudWatchLogEvent logEvent = new CloudWatchLogEvent();
         final String[] strings = {
                 "-",
                 "foo",
@@ -28,8 +28,8 @@ public class FlowLogMessageTest {
                 "ACCEPT",
                 "OK"
         };
-        logEvent.message = String.join(" ", strings);
 
+        CloudWatchLogEntry logEvent = new CloudWatchLogEntry("helloStream", "helloGroup", DateTime.now().getMillis() / 1000, String.join(" ", strings));
         FlowLogMessage m = FlowLogMessage.fromLogEvent(logEvent);
 
         assertEquals(m.getDestinationPort(), 0);
@@ -56,12 +56,11 @@ public class FlowLogMessageTest {
                 "ACCEPT",
                 "OK"
         };
-        final CloudWatchLogEvent logEvent = new CloudWatchLogEvent();
-        logEvent.message = String.join(" ", strings);
+
+        CloudWatchLogEntry logEvent = new CloudWatchLogEntry("helloStream", "helloGroup", DateTime.now().getMillis() / 1000, String.join(" ", strings));
         FlowLogMessage m = FlowLogMessage.fromLogEvent(logEvent);
 
         assertEquals(m.getBytes(), 0);
         assertEquals(m.getPackets(), 0);
     }
-
 }

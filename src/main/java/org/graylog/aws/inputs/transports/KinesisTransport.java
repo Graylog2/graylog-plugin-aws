@@ -3,11 +3,13 @@ package org.graylog.aws.inputs.transports;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.codahale.metrics.MetricSet;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
 import okhttp3.HttpUrl;
+import org.graylog.aws.AWSObjectMapper;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.kinesis.KinesisConsumer;
@@ -64,6 +66,7 @@ public class KinesisTransport extends ThrottleableTransport {
     private final NodeId nodeId;
     private final LocalMetricRegistry localRegistry;
     private final ClusterConfigService clusterConfigService;
+    private final ObjectMapper objectMapper;
 
     private KinesisConsumer reader;
     ExecutorService executor = null;
@@ -82,23 +85,24 @@ public class KinesisTransport extends ThrottleableTransport {
                             org.graylog2.Configuration graylogConfiguration,
                             final ClusterConfigService clusterConfigService,
                             final NodeId nodeId,
-                            LocalMetricRegistry localRegistry) {
+                            LocalMetricRegistry localRegistry,
+                            @AWSObjectMapper ObjectMapper objectMapper) {
         super(serverEventBus, configuration);
         this.clusterConfigService = clusterConfigService;
         this.configuration = configuration;
         this.graylogConfiguration = graylogConfiguration;
         this.nodeId = nodeId;
         this.localRegistry = localRegistry;
+        this.objectMapper = objectMapper;
     }
 
     @Override
     public void handleChangedThrottledState(boolean isThrottled) {
 
         if (!isThrottled) {
-            LOG.debug("✅ Unthrottled");
-        }
-        else{
-            LOG.debug("❗Throttled");
+            LOG.info("✅ Unthrottled");
+        } else {
+            LOG.info("❗Throttled");
         }
 
         if (!isThrottled && stoppedDueToThrottling.get()) {
@@ -159,8 +163,9 @@ public class KinesisTransport extends ThrottleableTransport {
                 nodeId,
                 graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(graylogConfiguration.getHttpProxyUri()),
                 this,
-                configuration.intIsSet(CK_KINESIS_MAX_THROTTLED_WAIT_MS) ? configuration.getInt(CK_KINESIS_MAX_THROTTLED_WAIT_MS) : null,
-                configuration.intIsSet(CK_KINESIS_RECORD_BATCH_SIZE) ? configuration.getInt(CK_KINESIS_RECORD_BATCH_SIZE) : null);
+                objectMapper, configuration.intIsSet(CK_KINESIS_MAX_THROTTLED_WAIT_MS) ? configuration.getInt(CK_KINESIS_MAX_THROTTLED_WAIT_MS) : null,
+                configuration.intIsSet(CK_KINESIS_RECORD_BATCH_SIZE) ? configuration.getInt(CK_KINESIS_RECORD_BATCH_SIZE) : null
+        );
 
         LOG.info("Starting Kinesis reader thread for input [{}/{}]", input.getName(), input.getId());
 
