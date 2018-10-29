@@ -29,8 +29,8 @@ public class FlowLogMessageTest {
                 "OK"
         };
 
-        CloudWatchLogEntry logEvent = new CloudWatchLogEntry("helloStream", "helloGroup", DateTime.now().getMillis() / 1000, String.join(" ", strings));
-        FlowLogMessage m = FlowLogMessage.fromLogEvent(logEvent);
+        final CloudWatchLogEntry logEvent = new CloudWatchLogEntry("helloStream", "helloGroup", DateTime.now().getMillis() / 1000, String.join(" ", strings));
+        final FlowLogMessage m = FlowLogMessage.fromLogEvent(logEvent);
 
         assertEquals(m.getDestinationPort(), 0);
         assertEquals(m.getSourcePort(), 0);
@@ -57,8 +57,8 @@ public class FlowLogMessageTest {
                 "OK"
         };
 
-        CloudWatchLogEntry logEvent = new CloudWatchLogEntry("helloStream", "helloGroup", DateTime.now().getMillis() / 1000, String.join(" ", strings));
-        FlowLogMessage m = FlowLogMessage.fromLogEvent(logEvent);
+        final CloudWatchLogEntry logEvent = new CloudWatchLogEntry("helloStream", "helloGroup", DateTime.now().getMillis() / 1000, String.join(" ", strings));
+        final FlowLogMessage m = FlowLogMessage.fromLogEvent(logEvent);
 
         assertEquals(m.getBytes(), 0);
         assertEquals(m.getPackets(), 0);

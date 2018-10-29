@@ -247,10 +247,10 @@ public class KinesisConsumer implements Runnable {
                 .config(config)
                 .build();
 
-        LOG.debug("☀️ Before Kinesis worker runs");
+        LOG.debug("Before Kinesis worker runs");
         worker.run();
         transport.consumerState = KinesisTransportState.STOPPED;
-        LOG.debug("🌅️ Before Kinesis worker runs");
+        LOG.debug("After Kinesis worker runs");
     }
 
     public void stop() {
