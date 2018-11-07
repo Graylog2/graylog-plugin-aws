@@ -228,7 +228,11 @@ CloudTrail will write notifications about log files it wrote to S3 to this queue
 
 ![Subscribing SQS queue to SNS topic](https://raw.githubusercontent.com/Graylog2/graylog-plugin-aws/master/images/plugin-aws-input-3.png)
 
-Right click on the new queue you just created and select *Subscribe Queue to SNS Topic*. Select the SNS topic that you configured in the first step when setting up CloudTrail. **Hit subscribe and you are all done with the AWS configuration.**
+Right click on the new queue you just created and select *Subscribe Queue to SNS Topic*. Select the SNS topic that you configured 
+in the first step when setting up CloudTrail. Hit subscribe, but make sure **not** to check the *Raw message delivery* option. 
+See this [AWS docs page](https://docs.aws.amazon.com/sns/latest/dg/sns-large-payload-raw-message-delivery.html) for more info on raw message delivery. 
+
+**That's it! You're are all done with the AWS configuration.** 
 
 ### Step 3: Install and configure the Graylog CloudTrail plugin
 
@@ -290,6 +294,23 @@ Restart `graylog-server` and you should see the new input type *AWS CloudTrail I
 You should see CloudTrail messages coming in after launching the input. (Note that it can take a few minutes based on how frequent systems are accessing your AWS resource) **You can even stop Graylog and it will catch up with all CloudTrail messages that were written since it was stopped when it is started a!gain.**
 
 **Now do a search in Graylog. Select “Search in all messages” and search for:** `source:"aws-cloudtrail"`
+
+## Troubleshooting
+
+### Enable Debug Logging
+
+To troubleshoot the AWS plugin, it may be useful to turn on debug logging for this plugin specifically. 
+Note that changing the Graylog subsystem logging level to `DEBUG` in *System > Logging* does *not* affect the logging 
+level for the AWS plugin. You will need to use the Graylog API to enable logging for this plugin. Execute this curl command against the 
+Graylog node running the AWS plugin to enable `DEBUG` logging for it:
+
+`curl -I -X PUT http://<graylog-username>:<graylog-password>@<graylog-node-ip>:9000/api/system/loggers/org.graylog.aws/level/debug`
+
+### CloudTrail troubleshooting
+
+If the CloudTrail input is starting, and the debug log messages show that messages are being received, but no messages are 
+visible when searching in Graylog, then make sure the SQS subscription is **not** set to deliver the messages in [raw format](https://docs.aws.amazon.com/sns/latest/dg/sns-large-payload-raw-message-delivery.html).
+   
 
 ## Build
 
