@@ -57,8 +57,8 @@ public class KinesisTransport extends ThrottleableTransport {
     private static final String CK_KINESIS_RECORD_BATCH_SIZE = "kinesis_record_batch_size";
     private static final String CK_KINESIS_MAX_THROTTLED_WAIT_MS = "kinesis_max_throttled_wait";
 
-    public static final int DEFAULT_THROTTLED_WAIT = 60000;
     public static final int DEFAULT_BATCH_SIZE = 10000;
+    public static final int DEFAULT_THROTTLED_WAIT_MS = 60000;
     public static final int KINESIS_CONSUMER_STOP_WAIT_MS = 15000;
 
     private final Configuration configuration;
@@ -163,7 +163,7 @@ public class KinesisTransport extends ThrottleableTransport {
                 graylogConfiguration.getHttpProxyUri() == null ? null : HttpUrl.get(graylogConfiguration.getHttpProxyUri()),
                 this,
                 objectMapper, configuration.intIsSet(CK_KINESIS_MAX_THROTTLED_WAIT_MS) ? configuration.getInt(CK_KINESIS_MAX_THROTTLED_WAIT_MS) : null,
-                configuration.intIsSet(CK_KINESIS_RECORD_BATCH_SIZE) ? configuration.getInt(CK_KINESIS_RECORD_BATCH_SIZE) : null
+                configuration.getInt(CK_KINESIS_RECORD_BATCH_SIZE, DEFAULT_THROTTLED_WAIT_MS)
         );
 
         LOG.info("Starting Kinesis reader thread for input [{}/{}]", input.getName(), input.getId());
@@ -226,7 +226,7 @@ public class KinesisTransport extends ThrottleableTransport {
             r.addField(new NumberField(
                     CK_KINESIS_MAX_THROTTLED_WAIT_MS,
                     "Throttled wait milliseconds",
-                    DEFAULT_THROTTLED_WAIT,
+                    DEFAULT_THROTTLED_WAIT_MS,
                     "The maximum time that the Kinesis input will pause for when in a throttled state. If this time is exceeded, then the Kinesis consumer will shut down until the throttled state is cleared. Recommended default: 60,000 ms",
                     ConfigurationField.Optional.OPTIONAL,
                     NumberField.Attribute.ONLY_POSITIVE));

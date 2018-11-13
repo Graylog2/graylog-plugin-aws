@@ -88,10 +88,7 @@ public class KinesisConsumer implements Runnable {
         this.transport = transport;
         this.objectMapper = objectMapper;
         this.recordBatchSize = recordBatchSize;
-
-        // Use default throttled time of 60 seconds if not specified in configuration.
-        this.maxThrottledWaitMillis =
-                maxThrottledWaitMillis != null ? maxThrottledWaitMillis : KinesisTransport.DEFAULT_THROTTLED_WAIT;
+        this.maxThrottledWaitMillis = maxThrottledWaitMillis;
     }
 
     // TODO metrics
