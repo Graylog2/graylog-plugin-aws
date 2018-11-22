@@ -61,13 +61,14 @@ public class CloudTrailSubscriber extends Thread {
 
     @Override
     public void run() {
+
+        LOG.debug("Starting CloudTrailSubscriber");
         CloudtrailSQSClient subscriber = new CloudtrailSQSClient(
                 sqsRegion,
                 queueName,
                 authProvider,
                 proxyUrl,
-                objectMapper
-        );
+                objectMapper);
 
         TreeReader reader = new TreeReader(objectMapper);
         S3Reader s3Reader = new S3Reader(s3Region, proxyUrl, authProvider);
@@ -90,6 +91,7 @@ public class CloudTrailSubscriber extends Thread {
                     LOG.error("Could not read messages from SQS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
                     break;
                 }
+                LOG.debug("Subscriber returned [{}] notifications.", notifications.size());
 
                 /*
                  * Break out and wait a few seconds until next attempt to avoid hammering AWS with SQS
@@ -101,18 +103,22 @@ public class CloudTrailSubscriber extends Thread {
                     break;
                 }
 
+                LOG.debug("Proceeding to read message content from S3.");
                 for (CloudtrailSNSNotification n : notifications) {
                     try {
-                        LOG.debug("Checking for CloudTrail notifications in SQS.");
 
+                        LOG.debug("Checking for CloudTrail notifications in SQS.");
                         List<CloudTrailRecord> records = reader.read(
                                 s3Reader.readCompressed(
                                         n.getS3Bucket(),
-                                        n.getS3ObjectKey()
-                                )
-                        );
+                                        n.getS3ObjectKey()));
+
+                        LOG.debug("[{}] records read from S3.", records.size());
 
                         for (CloudTrailRecord record : records) {
+
+                            LOG.debug("Processing message content.");
+
                             /*
                              * We are using process and not processFailFast here even though we are using a
                              * queue system (SQS) that could just deliver the message again when we are out of
