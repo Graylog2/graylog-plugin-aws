@@ -1,6 +1,6 @@
 {
   "name": "graylog-plugin-aws",
-  "version": "2.5.0-SNAPSHOT",
+  "version": "2.5.0-alpha.1",
   "description": "Graylog plugins to integrate with different AWS services like CloudTrail and FlowLogs",
   "repository": {
     "type": "git",
