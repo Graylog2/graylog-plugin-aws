@@ -69,7 +69,7 @@ public class KinesisTransport extends ThrottleableTransport {
     private final ObjectMapper objectMapper;
 
     private KinesisConsumer reader;
-    ExecutorService executor = null;
+    private final ExecutorService executor;
     private Future<?> kinesisTaskFuture = null;
 
     /**
@@ -94,6 +94,11 @@ public class KinesisTransport extends ThrottleableTransport {
         this.nodeId = nodeId;
         this.localRegistry = localRegistry;
         this.objectMapper = objectMapper;
+        this.executor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+                                                                  .setDaemon(true)
+                                                                  .setNameFormat("aws-kinesis-reader-%d")
+                                                                  .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS Kinesis reader.", e))
+                                                                  .build());
     }
 
     @Override
@@ -167,17 +172,7 @@ public class KinesisTransport extends ThrottleableTransport {
         );
 
         LOG.info("Starting Kinesis reader thread for input [{}/{}]", input.getName(), input.getId());
-
-        executor = getExecutorService();
         kinesisTaskFuture = executor.submit(this.reader);
-    }
-
-    private ExecutorService getExecutorService() {
-        return Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
-                                                         .setDaemon(true)
-                                                         .setNameFormat("aws-kinesis-reader-%d")
-                                                         .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS Kinesis reader.", e))
-                                                         .build());
     }
 
     private Consumer<byte[]> kinesisCallback(final MessageInput input) {
