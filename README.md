@@ -6,9 +6,17 @@
 
 This plugin provides the following Graylog modules:
 
-* Input plugin for [AWS Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) network interface connection logs
-* Input plugin for [AWS Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
-* Input plugin for [AWS CloudTrail](http://aws.amazon.com/cloudtrail/) logs
+* Input plugin for [AWS Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) network interface connection logs.
+* Input plugin for [AWS Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html) General CloudWatch logs.
+* Input plugin for [AWS CloudTrail](http://aws.amazon.com/cloudtrail/) configuration change logs.
+
+
+This plugin provides the following functionality:
+
+* AWS Logs input: Reads a stream of CloudWatch logs from a specific AWS [CloudWatch log group](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html) matching a particular [log filter pattern](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html). 
+* AWS Flow Logs input: Reads a stream of network [flow logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html) for a VPC, subnet, or network interface.
+* AWS entity translation: Looks up data for an an AWS entity. 
+
 
 Graylog Version Compatibility
 -----------------------------
@@ -23,6 +31,8 @@ Graylog Version Compatibility
 
 ## Installation
 
+> Since Graylog Version 2.4.0 this plugin is already included in the Graylog server installation package as default plugin.
+
 [Download the plugin](https://github.com/Graylog2/graylog-plugin-aws/releases)
 and place the `.jar` file in your Graylog plugin directory. The plugin directory
 is the `plugins/` folder relative from your `graylog-server` directory by default
@@ -34,7 +44,7 @@ Restart `graylog-server` and you are done.
 
 After installing the plugin you will have a new cluster configuration section at “System -> Configurations” in your Graylog Web Interface. Make sure to complete the configuration before using any of the modules this plugin provides. You’ll see a lot of warnings in your `graylog-server` log file if you fail to do so.
 
-Note that the AWS access and secret key are currently not stored encrypted. This feature is following shortly and before the final release of v1.0 of this plugin. (in a few days)
+Note that the AWS access and secret key are currently not stored encrypted. This feature is following shortly and before the final release of v1.0 of this plugin.
 
 ### AWS entity translation
 
@@ -44,7 +54,7 @@ This would look something like this:
 
 [![](https://s3.amazonaws.com/graylog2public/aws_translation.jpg)](https://s3.amazonaws.com/graylog2public/aws_translation.jpg)
 
-Here are required IAM permissions in case you decide to use this feature:
+IAM permissions required to use this feature:
 
 ```
 {
@@ -77,13 +87,27 @@ Here are required IAM permissions in case you decide to use this feature:
 }
 ```
 
-## FlowLogs setup and configuration
+## AWS Flow Logs/AWS Logs
 
-The Flow Logs integration and analysis examples are described in [this graylog.org blog post](https://www.graylog.org/blog/62-a-practical-approach-to-open-source-network-security).
+Graylog supports the ability to read AWS Cloudwatch logs regardless of where they originated from. As long as 
+the logs end up in a constant CloudWatch log group, then Graylog should be able to read them. The log messages for a 
+particular CloudWatch log group must be forwarded to a Kinesis stream (via [CloudWatch Subscription filters](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html)) from which Graylog will be able to read and 
+process them. Using a Kinesis stream allows Graylog the ability to sequentially read the log messages. If the input is 
+temporarily stopped, then started again, the input will continue reading messages were it left off (as long as the data 
+retention period on the Kinesis stream is large enough).
+
+AWS Flow Logs and AWS Logs inputs both read logs from CloudWatch log groups. However, the AWS Flow Logs input internally 
+uses a special decoder that parses fields from each message according to the [AWS flow log message format](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html#flow-log-records).
+
+The AWS Logs input automatically parses the aws_log_group and aws_log_stream fields, and leaves the remaining field 
+extraction up to the user to define. 
+
+Several flow logs integration and analysis examples are described in [this graylog.org blog post](https://www.graylog.org/post/a-practical-approach-to-open-source-network-security-monitoring). 
 
 ### Step 1: Enable Flow Logs
 
-There are two ways to enable Flow Logs for an AWS network interface:
+This step is only needed when setting up the AWS Flow Logs input (skip if setting up the AWS logs input). There are two 
+ways to enable Flow Logs for an AWS network interface:
 
 For a specific network interface in your EC2 console, under the “Network Interfaces” main navigation link:
 
@@ -154,7 +178,7 @@ Now attach this role:
 
     aws iam put-role-policy --role-name CWLtoKinesisRole --policy-name Permissions-Policy-For-CWL --policy-document file://permissions.json
 
-The last step is to create the actual subscription that will write the FlowLogs to Kinesis:
+The last step is to create the actual subscription that will write the Flow Logs to Kinesis:
 
 ```
 aws logs put-subscription-filter \
@@ -165,11 +189,47 @@ aws logs put-subscription-filter \
     --role-arn "[YOUR IAM ARN HERE]"
 ```
 
-You should now see FlowLogs being written into your Kinesis stream.
+You should now see Flow Logs being written into your Kinesis stream.
+
+### Step 3: Create AWS user for running the input
+
+IAM permissions required for the input user:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "VisualEditor0",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData",
+        "dynamodb:CreateTable",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem",
+        "ec2:DescribeInstances",
+        "ec2:DescribeNetworkInterfaceAttribute",
+        "ec2:DescribeNetworkInterfaces",
+        "elasticloadbalancing:DescribeLoadBalancerAttributes",
+        "elasticloadbalancing:DescribeLoadBalancers",
+        "kinesis:GetRecords",
+        "kinesis:GetShardIterator",
+        "kinesis:ListShards"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+Once the user is created, take note of the Access key ID Secret access key. You will need these to properly configure the input in AWS.
 
 ### Step 4: Launch input
 
-Now go into the Graylog Web Interface and start a new *AWS FlowLogs input*. It will ask you for some simple parameters like the Kinesis Stream name you are writing your FlowLogs to.
+Now go into the Graylog Web Interface and start a new *AWS Flow Logs input*. It will ask you for some simple parameters like the Kinesis Stream name you are writing your Flow Logs to.
 
 You should see something like this in your `graylog-server` log file after starting the input:
 
@@ -197,7 +257,21 @@ You should see something like this in your `graylog-server` log file after start
 
 **It will take a few minutes until the first logs are coming in.**
 
-**Important: AWS delivers the FlowLogs with a few minutes delay and not always in an ordered fashion. Keep this in mind when searching over messages in a recent time frame.**
+**Important: AWS delivers Flow Logs intermittently in batches (usually in 5 to 15 minute intervals), and sometimes out of order. Keep this in 
+mind when searching over messages in a recent time frame.**
+
+### Throttling
+
+Starting in version 2.4.6, the AWS Flow Logs and AWS Logs inputs support the ability to throttle if contention occurs in the Graylog Journal. 
+Throttling will slow the rate of AWS Kinesis stream intake for these inputs by pausing processing until the Journal 
+contention is cleared when the node catches up. If the contention lasts for more than 60 seconds, then the Kinesis consumer will be 
+temporarily stopped until the Journal contention is resolved. This setting can help to slow down the processing of 
+large, intermittent log batches. If frequent long/disruptive throttling occurs, then additional hardware resources may 
+need to be allocated to the Graylog node where the input is running.   
+
+To enable throttling, edit the input and check the *Allow throttling this input* checkbox. 
+
+See the [Input Throttling](http://docs.graylog.org/en/3.0/pages/sending_data.html#throttling-criteria) section of the Graylog docs for more information about how and when throttling will occur.
 
 ## CloudTrail setup and configuration
 
@@ -226,7 +300,11 @@ CloudTrail will write notifications about log files it wrote to S3 to this queue
 
 ![Subscribing SQS queue to SNS topic](https://raw.githubusercontent.com/Graylog2/graylog-plugin-aws/master/images/plugin-aws-input-3.png)
 
-Right click on the new queue you just created and select *Subscribe Queue to SNS Topic*. Select the SNS topic that you configured in the first step when setting up CloudTrail. **Hit subscribe and you are all done with the AWS configuration.**
+Right click on the new queue you just created and select *Subscribe Queue to SNS Topic*. Select the SNS topic that you configured 
+in the first step when setting up CloudTrail. Hit subscribe, but make sure **not** to check the *Raw message delivery* option. 
+See this [AWS docs page](https://docs.aws.amazon.com/sns/latest/dg/sns-large-payload-raw-message-delivery.html) for more info on raw message delivery. 
+
+**That's it! You're are all done with the AWS configuration.** 
 
 ### Step 3: Install and configure the Graylog CloudTrail plugin
 
@@ -288,6 +366,23 @@ Restart `graylog-server` and you should see the new input type *AWS CloudTrail I
 You should see CloudTrail messages coming in after launching the input. (Note that it can take a few minutes based on how frequent systems are accessing your AWS resource) **You can even stop Graylog and it will catch up with all CloudTrail messages that were written since it was stopped when it is started a!gain.**
 
 **Now do a search in Graylog. Select “Search in all messages” and search for:** `source:"aws-cloudtrail"`
+
+## Troubleshooting
+
+### Enable Debug Logging
+
+To troubleshoot the AWS plugin, it may be useful to turn on debug logging for this plugin specifically. 
+Note that changing the Graylog subsystem logging level to `DEBUG` in *System > Logging* does *not* affect the logging 
+level for the AWS plugin. You will need to use the Graylog API to enable logging for this plugin. Execute this curl command against the 
+Graylog node running the AWS plugin to enable `DEBUG` logging for it:
+
+`curl -I -X PUT http://<graylog-username>:<graylog-password>@<graylog-node-ip>:9000/api/system/loggers/org.graylog.aws/level/debug`
+
+### CloudTrail troubleshooting
+
+If the CloudTrail input is starting, and the debug log messages show that messages are being received, but no messages are 
+visible when searching in Graylog, then make sure the SQS subscription is **not** set to deliver the messages in [raw format](https://docs.aws.amazon.com/sns/latest/dg/sns-large-payload-raw-message-delivery.html).
+   
 
 ## Build
 

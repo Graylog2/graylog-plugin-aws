@@ -3,6 +3,7 @@ package org.graylog.aws.inputs.codecs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.assistedinject.Assisted;
 import org.graylog.aws.AWS;
+import org.graylog.aws.cloudwatch.CloudWatchLogEntry;
 import org.graylog.aws.cloudwatch.CloudWatchLogEvent;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.plugin.AWSObjectMapper;
@@ -28,7 +29,7 @@ public class CloudWatchRawLogCodec extends CloudWatchLogDataCodec {
 
     @Nullable
     @Override
-    public Message decodeLogData(@Nonnull final CloudWatchLogEvent logEvent, @Nonnull final String logGroup, @Nonnull final String logStream) {
+    public Message decodeLogData(@Nonnull final CloudWatchLogEntry logEvent, @Nonnull final String logGroup, @Nonnull final String logStream) {
         try {
             final String source = configuration.getString(CloudTrailCodec.Config.CK_OVERRIDE_SOURCE, "aws-raw-logs");
             Message result = new Message(
