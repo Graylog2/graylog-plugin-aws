@@ -35,7 +35,7 @@ public abstract class CloudWatchLogDataCodec extends AbstractCodec {
             } catch (Exception e) {
                 LOG.error("Couldn't decode log event <{}>", entry);
 
-                // TODO: What is the effect of returning null here?
+                // Message will be dropped when returning null
                 return null;
             }
         } catch (IOException e) {
