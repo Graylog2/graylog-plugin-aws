@@ -75,8 +75,8 @@ public class KinesisTransport extends ThrottleableTransport {
      * Indicates if the Kinesis consumer has been stopped due to throttling. Allows the consumer to be restarted
      * once throttling is cleared.
      */
-    public AtomicBoolean stoppedDueToThrottling = new AtomicBoolean(false);
-    public final AtomicReference<KinesisTransportState> consumerState = new AtomicReference<>();
+    public AtomicBoolean stoppedDueToThrottling;
+    public final AtomicReference<KinesisTransportState> consumerState;
 
     @Inject
     public KinesisTransport(@Assisted final Configuration configuration,
@@ -98,7 +98,8 @@ public class KinesisTransport extends ThrottleableTransport {
                                                                   .setNameFormat("aws-kinesis-reader-%d")
                                                                   .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS Kinesis reader.", e))
                                                                   .build());
-        this.consumerState.set(KinesisTransportState.STOPPED);
+        this.stoppedDueToThrottling = new AtomicBoolean(false);
+        this.consumerState = new AtomicReference<>(KinesisTransportState.STOPPED);
     }
 
     @Override
