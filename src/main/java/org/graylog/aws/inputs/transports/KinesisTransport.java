@@ -100,9 +100,9 @@ public class KinesisTransport extends ThrottleableTransport {
     public void handleChangedThrottledState(boolean isThrottled) {
 
         if (!isThrottled) {
-            LOG.info("✅ Unthrottled");
+            LOG.info("Unthrottled");
         } else {
-            LOG.info("❗Throttled");
+            LOG.info("Throttled");
         }
 
         if (!isThrottled && stoppedDueToThrottling.get()) {
