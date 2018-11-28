@@ -12,6 +12,7 @@ import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput;
 import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput;
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput;
 import com.amazonaws.services.kinesis.model.Record;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.rholder.retry.Attempt;
 import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.RetryListener;
@@ -21,8 +22,12 @@ import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
 import okhttp3.HttpUrl;
 import org.graylog.aws.auth.AWSAuthProvider;
+import org.graylog.aws.cloudwatch.CloudWatchLogData;
+import org.graylog.aws.cloudwatch.CloudWatchLogEntry;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.config.Proxy;
+import org.graylog.aws.inputs.transports.KinesisTransport;
+import org.graylog.aws.inputs.transports.KinesisTransportState;
 import org.graylog2.plugin.Tools;
 import org.graylog2.plugin.system.NodeId;
 import org.joda.time.DateTime;
@@ -31,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +45,7 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 public class KinesisConsumer implements Runnable {
+
     private static final Logger LOG = LoggerFactory.getLogger(KinesisConsumer.class);
 
     private final Region region;
@@ -48,8 +55,18 @@ public class KinesisConsumer implements Runnable {
     private final HttpUrl proxyUrl;
     private final AWSPluginConfiguration awsConfig;
     private final Consumer<byte[]> dataHandler;
+    private final Integer maxThrottledWaitMillis;
+    private final Integer recordBatchSize;
 
     private Worker worker;
+    private KinesisTransport transport;
+    private final ObjectMapper objectMapper;
+    /**
+     * Checkpointing must be performed when the KinesisConsumer needs to be shuts down due to sustained throttling.
+     * At the time when shutdown occurs, checkpointing might not have happened for a while, so we keep track of the
+     * last sequence to checkpoint to.
+     */
+    private String lastSuccessfulRecordSequence = null;
 
     public KinesisConsumer(String kinesisStreamName,
                            Region region,
@@ -57,7 +74,11 @@ public class KinesisConsumer implements Runnable {
                            AWSPluginConfiguration awsConfig,
                            AWSAuthProvider authProvider,
                            NodeId nodeId,
-                           @Nullable HttpUrl proxyUrl) {
+                           @Nullable HttpUrl proxyUrl,
+                           KinesisTransport transport,
+                           ObjectMapper objectMapper,
+                           Integer maxThrottledWaitMillis,
+                           Integer recordBatchSize) {
         this.kinesisStreamName = requireNonNull(kinesisStreamName, "kinesisStreamName");
         this.region = requireNonNull(region, "region");
         this.dataHandler = requireNonNull(dataHandler, "dataHandler");
@@ -65,20 +86,34 @@ public class KinesisConsumer implements Runnable {
         this.authProvider = requireNonNull(authProvider, "authProvider");
         this.nodeId = requireNonNull(nodeId, "nodeId");
         this.proxyUrl = proxyUrl;
+        this.transport = transport;
+        this.objectMapper = objectMapper;
+        this.maxThrottledWaitMillis = maxThrottledWaitMillis;
+        this.recordBatchSize = recordBatchSize;
     }
 
     // TODO metrics
     public void run() {
+
+        transport.consumerState.set(KinesisTransportState.STARTING);
+
+        LOG.debug("Max wait millis [{}]", maxThrottledWaitMillis);
+        LOG.debug("Record batch size [{}]", recordBatchSize);
+
         final String workerId = String.format(Locale.ENGLISH, "graylog-node-%s", nodeId.anonymize());
-        final KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(
-                // The application name needs to be unique per input. Using the same name for two different Kinesis
-                // streams will cause trouble with state handling in DynamoDB. (used by the Kinesis client under the
-                // hood to keep state)
-                String.format(Locale.ENGLISH, "graylog-aws-plugin-%s", kinesisStreamName),
-                kinesisStreamName,
-                authProvider,
-                workerId
-        ).withRegionName(region.getName());
+
+        // The application name needs to be unique per input. Using the same name for two different Kinesis
+        // streams will cause trouble with state handling in DynamoDB. (used by the Kinesis client under the
+        // hood to keep state)
+        final String applicationName = String.format(Locale.ENGLISH, "graylog-aws-plugin-%s", kinesisStreamName);
+        KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(applicationName, kinesisStreamName,
+                                                                                 authProvider, workerId);
+        config.withRegionName(region.getName());
+
+        // Default max records is 10k. This can be overridden from UI.
+        if (recordBatchSize != null) {
+            config.withMaxRecords(recordBatchSize);
+        }
 
         // Optional HTTP proxy
         if (awsConfig.proxyEnabled() && proxyUrl != null) {
@@ -90,12 +125,39 @@ public class KinesisConsumer implements Runnable {
 
             @Override
             public void initialize(InitializationInput initializationInput) {
-                LOG.info("Initializing Kinesis worker for stream <{}>", kinesisStreamName);
+                LOG.debug("Initializing Kinesis worker for stream <{}>", kinesisStreamName);
+                transport.consumerState.set(KinesisTransportState.RUNNING);
             }
 
             @Override
             public void processRecords(ProcessRecordsInput processRecordsInput) {
-                LOG.debug("Received {} Kinesis events", processRecordsInput.getRecords().size());
+
+                LOG.debug("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size());
+
+                if (transport.isThrottled()) {
+                    LOG.info("[throttled] Waiting up to [{}ms] for throttling to clear.", maxThrottledWaitMillis);
+                    if (!transport.blockUntilUnthrottled(maxThrottledWaitMillis, TimeUnit.MILLISECONDS)) {
+
+                        /* Stop the Kinesis consumer when throttling does not clear quickly. The AWS Kinesis client
+                         * requires that the worker thread stays healthy and does not take too long to respond.
+                         * So, if we need to wait a long time for throttling to clear (eg. more than 1 minute), then the
+                         * consumer needs to be shutdown and restarted later once throttling clears. */
+                        LOG.info("[throttled] Throttling did not clear in [{}]ms. Stopping the Kinesis worker to let " +
+                                 "the throttle clear.️ It will start again automatically once throttling clears.", maxThrottledWaitMillis);
+
+                        // Checkpoint last processed record before shutting down.
+                        if (lastSuccessfulRecordSequence != null) {
+                            checkpoint(processRecordsInput, lastSuccessfulRecordSequence);
+                        }
+
+                        transport.consumerState.set(KinesisTransportState.STOPPING);
+                        worker.shutdown();
+                        transport.stoppedDueToThrottling.set(true);
+                        return;
+                    }
+
+                    LOG.debug("[unthrottled] Kinesis consumer will now resume processing records.");
+                }
 
                 for (Record record : processRecordsInput.getRecords()) {
                     try {
@@ -105,7 +167,21 @@ public class KinesisConsumer implements Runnable {
                         final byte[] dataBytes = new byte[dataBuffer.remaining()];
                         dataBuffer.get(dataBytes);
 
-                        dataHandler.accept(Tools.decompressGzip(dataBytes).getBytes());
+                        // Decompress response.
+                        final byte[] bytes = Tools.decompressGzip(dataBytes).getBytes();
+
+                        // Extract messages, so that they can be committed to journal one by one.
+                        final CloudWatchLogData data = objectMapper.readValue(bytes, CloudWatchLogData.class);
+                        Iterator<CloudWatchLogEntry> iterator =
+                                data.logEvents.stream().map(le -> new CloudWatchLogEntry(data.logGroup, data.logStream, le.timestamp, le.message)).iterator();
+
+                        // Push all messages to the Journal.
+                        while (iterator.hasNext()) {
+                            CloudWatchLogEntry next = iterator.next();
+                            dataHandler.accept(objectMapper.writeValueAsBytes(next));
+                        }
+
+                        lastSuccessfulRecordSequence = record.getSequenceNumber();
                     } catch (Exception e) {
                         LOG.error("Couldn't read Kinesis record from stream <{}>", kinesisStreamName, e);
                     }
@@ -117,11 +193,11 @@ public class KinesisConsumer implements Runnable {
                 if (lastCheckpoint.plusMinutes(1).isBeforeNow()) {
                     lastCheckpoint = DateTime.now();
                     LOG.debug("Checkpointing stream <{}>", kinesisStreamName);
-                    checkpoint(processRecordsInput);
+                    checkpoint(processRecordsInput, null);
                 }
             }
 
-            private void checkpoint(ProcessRecordsInput processRecordsInput) {
+            private void checkpoint(ProcessRecordsInput processRecordsInput, String lastSequence) {
                 final Retryer<Void> retryer = RetryerBuilder.<Void>newBuilder()
                         .retryIfExceptionOfType(ThrottlingException.class)
                         .withWaitStrategy(WaitStrategies.fixedWait(1, TimeUnit.SECONDS))
@@ -139,7 +215,11 @@ public class KinesisConsumer implements Runnable {
                 try {
                     retryer.call(() -> {
                         try {
-                            processRecordsInput.getCheckpointer().checkpoint();
+                            if (lastSequence != null) {
+                                processRecordsInput.getCheckpointer().checkpoint(lastSequence);
+                            } else {
+                                processRecordsInput.getCheckpointer().checkpoint();
+                            }
                         } catch (InvalidStateException e) {
                             LOG.error("Couldn't save checkpoint to DynamoDB table used by the Kinesis client library - check database table", e);
                         } catch (ShutdownException e) {
@@ -165,7 +245,10 @@ public class KinesisConsumer implements Runnable {
                 .config(config)
                 .build();
 
+        LOG.debug("Before Kinesis worker runs");
         worker.run();
+        transport.consumerState.set(KinesisTransportState.STOPPED);
+        LOG.debug("After Kinesis worker runs");
     }
 
     public void stop() {
@@ -173,5 +256,4 @@ public class KinesisConsumer implements Runnable {
             worker.shutdown();
         }
     }
-
 }
