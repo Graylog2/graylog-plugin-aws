@@ -57,9 +57,9 @@ public class KinesisTransport extends ThrottleableTransport {
     private static final String CK_KINESIS_RECORD_BATCH_SIZE = "kinesis_record_batch_size";
     private static final String CK_KINESIS_MAX_THROTTLED_WAIT_MS = "kinesis_max_throttled_wait";
 
-    public static final int DEFAULT_BATCH_SIZE = 10000;
-    public static final int DEFAULT_THROTTLED_WAIT_MS = 60000;
-    public static final int KINESIS_CONSUMER_STOP_WAIT_MS = 15000;
+    private static final int DEFAULT_BATCH_SIZE = 10000;
+    private static final int DEFAULT_THROTTLED_WAIT_MS = 60000;
+    private static final int KINESIS_CONSUMER_STOP_WAIT_MS = 15000;
 
     private final Configuration configuration;
     private final org.graylog2.Configuration graylogConfiguration;
@@ -70,7 +70,7 @@ public class KinesisTransport extends ThrottleableTransport {
 
     private KinesisConsumer reader;
     ExecutorService executor = null;
-    public Future<?> kinesisTaskFuture = null;
+    private Future<?> kinesisTaskFuture = null;
 
     /**
      * Indicates if the Kinesis consumer has been stopped due to throttling. Allows the consumer to be restarted
