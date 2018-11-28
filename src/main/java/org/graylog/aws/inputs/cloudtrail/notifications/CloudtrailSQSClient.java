@@ -38,6 +38,7 @@ public class CloudtrailSQSClient {
     }
 
     public List<CloudtrailSNSNotification> getNotifications() {
+
         LOG.debug("Fetching SQS CloudTrail notifications.");
 
         List<CloudtrailSNSNotification> notifications = Lists.newArrayList();
@@ -47,12 +48,14 @@ public class CloudtrailSQSClient {
         ReceiveMessageResult result = sqs.receiveMessage(request);
 
         LOG.debug("Received [{}] SQS CloudTrail notifications.", result.getMessages().size());
-
         CloudtrailSNSNotificationParser parser = new CloudtrailSNSNotificationParser(objectMapper);
+        LOG.debug("Finished parsing notifications.");
 
         for (Message message : result.getMessages()) {
             notifications.addAll(parser.parse(message));
         }
+
+        LOG.debug("Returning notifications.");
 
         return notifications;
     }
