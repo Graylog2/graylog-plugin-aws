@@ -87,8 +87,8 @@ public class KinesisConsumer implements Runnable {
         this.proxyUrl = proxyUrl;
         this.transport = transport;
         this.objectMapper = objectMapper;
-        this.recordBatchSize = recordBatchSize;
         this.maxThrottledWaitMillis = maxThrottledWaitMillis;
+        this.recordBatchSize = recordBatchSize;
     }
 
     // TODO metrics
