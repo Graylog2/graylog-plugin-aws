@@ -138,6 +138,7 @@ public class KinesisTransport extends ThrottleableTransport {
                             }
                         }
                     }, KINESIS_CONSUMER_STOP_WAIT_MS);
+                    break;
                 }
                 default:
                     // Consumer is either starting or already running. Do not do anything.
