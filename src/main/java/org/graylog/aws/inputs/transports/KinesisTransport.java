@@ -41,9 +41,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-
-import static org.graylog.aws.inputs.transports.KinesisTransportState.STOPPED;
 
 public class KinesisTransport extends ThrottleableTransport {
     private static final Logger LOG = LoggerFactory.getLogger(KinesisTransport.class);
@@ -77,7 +76,7 @@ public class KinesisTransport extends ThrottleableTransport {
      * once throttling is cleared.
      */
     public AtomicBoolean stoppedDueToThrottling = new AtomicBoolean(false);
-    public KinesisTransportState consumerState = STOPPED;
+    public final AtomicReference<KinesisTransportState> consumerState = new AtomicReference<>();
 
     @Inject
     public KinesisTransport(@Assisted final Configuration configuration,
@@ -99,6 +98,7 @@ public class KinesisTransport extends ThrottleableTransport {
                                                                   .setNameFormat("aws-kinesis-reader-%d")
                                                                   .setUncaughtExceptionHandler((t, e) -> LOG.error("Uncaught exception in AWS Kinesis reader.", e))
                                                                   .build());
+        this.consumerState.set(KinesisTransportState.STOPPED);
     }
 
     @Override
@@ -114,9 +114,9 @@ public class KinesisTransport extends ThrottleableTransport {
 
             stoppedDueToThrottling.set(false);
 
-            LOG.debug("Transport state [{}]", consumerState);
+            LOG.debug("Transport state [{}]", consumerState.get());
 
-            switch (consumerState) {
+            switch (consumerState.get()) {
                 case STOPPED:
                     LOG.info("[unthrottled] Throttle state ended restarting consumer");
                     restartConsumer();
@@ -128,7 +128,7 @@ public class KinesisTransport extends ThrottleableTransport {
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
-                            if (consumerState == KinesisTransportState.STOPPED) {
+                            if (consumerState.get() == KinesisTransportState.STOPPED) {
                                 restartConsumer();
                             } else {
                                 // TODO: Do we need to do something special in this case? Wait longer? Probably.

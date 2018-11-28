@@ -64,7 +64,8 @@ public class KinesisConsumer implements Runnable {
     /**
      * Checkpointing must be performed when the KinesisConsumer needs to be shuts down due to sustained throttling.
      * At the time when shutdown occurs, checkpointing might not have happened for a while, so we keep track of the
-     * last sequence to checkpoint to. */
+     * last sequence to checkpoint to.
+     */
     private String lastSuccessfulRecordSequence = null;
 
     public KinesisConsumer(String kinesisStreamName,
@@ -94,7 +95,7 @@ public class KinesisConsumer implements Runnable {
     // TODO metrics
     public void run() {
 
-        transport.consumerState = KinesisTransportState.STARTING;
+        transport.consumerState.set(KinesisTransportState.STARTING);
 
         LOG.debug("Max wait millis [{}]", maxThrottledWaitMillis);
         LOG.debug("Record batch size [{}]", recordBatchSize);
@@ -125,7 +126,7 @@ public class KinesisConsumer implements Runnable {
             @Override
             public void initialize(InitializationInput initializationInput) {
                 LOG.debug("Initializing Kinesis worker for stream <{}>", kinesisStreamName);
-                transport.consumerState = KinesisTransportState.RUNNING;
+                transport.consumerState.set(KinesisTransportState.RUNNING);
             }
 
             @Override
@@ -149,7 +150,7 @@ public class KinesisConsumer implements Runnable {
                             checkpoint(processRecordsInput, lastSuccessfulRecordSequence);
                         }
 
-                        transport.consumerState = KinesisTransportState.STOPPING;
+                        transport.consumerState.set(KinesisTransportState.STOPPING);
                         worker.shutdown();
                         transport.stoppedDueToThrottling.set(true);
                         return;
@@ -172,7 +173,7 @@ public class KinesisConsumer implements Runnable {
                         // Extract messages, so that they can be committed to journal one by one.
                         final CloudWatchLogData data = objectMapper.readValue(bytes, CloudWatchLogData.class);
                         Iterator<CloudWatchLogEntry> iterator =
-                                data.logEvents.stream().map(le -> new CloudWatchLogEntry( data.logGroup, data.logStream, le.timestamp, le.message)).iterator();
+                                data.logEvents.stream().map(le -> new CloudWatchLogEntry(data.logGroup, data.logStream, le.timestamp, le.message)).iterator();
 
                         // Push all messages to the Journal.
                         while (iterator.hasNext()) {
@@ -246,7 +247,7 @@ public class KinesisConsumer implements Runnable {
 
         LOG.debug("Before Kinesis worker runs");
         worker.run();
-        transport.consumerState = KinesisTransportState.STOPPED;
+        transport.consumerState.set(KinesisTransportState.STOPPED);
         LOG.debug("After Kinesis worker runs");
     }
 
