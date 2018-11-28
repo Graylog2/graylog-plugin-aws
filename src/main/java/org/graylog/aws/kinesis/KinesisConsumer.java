@@ -131,7 +131,7 @@ public class KinesisConsumer implements Runnable {
             @Override
             public void processRecords(ProcessRecordsInput processRecordsInput) {
 
-                LOG.info("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size() * 1024);
+                LOG.debug("processRecords called. Received {} Kinesis events", processRecordsInput.getRecords().size());
 
                 if (transport.isThrottled()) {
                     LOG.info("[throttled] Waiting up to [{}ms] for throttling to clear.", maxThrottledWaitMillis);
@@ -155,7 +155,7 @@ public class KinesisConsumer implements Runnable {
                         return;
                     }
 
-                    LOG.info("[unthrottled] Kinesis consumer will now resume processing records.");
+                    LOG.debug("[unthrottled] Kinesis consumer will now resume processing records.");
                 }
 
                 for (Record record : processRecordsInput.getRecords()) {
