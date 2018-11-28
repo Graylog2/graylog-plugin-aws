@@ -183,8 +183,8 @@ public class KinesisTransport extends ThrottleableTransport {
 
     @Override
     public void doStop() {
+        this.stoppedDueToThrottling.set(false); // Prevent restart of consumer when input is shutting down.
         if (this.reader != null) {
-            this.stoppedDueToThrottling.set(false); // Prevent restart of consumer when input is shutting down.
             this.reader.stop();
         }
     }
