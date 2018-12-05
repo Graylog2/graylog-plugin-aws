@@ -262,7 +262,7 @@ mind when searching over messages in a recent time frame.**
 
 ### Throttling
 
-Starting in version 2.4.6, the AWS Flow Logs and AWS Logs inputs support the ability to throttle if contention occurs in the Graylog Journal. 
+Starting in version 2.5.0, the AWS Flow Logs and AWS Logs inputs support the ability to throttle if contention occurs in the Graylog Journal. 
 Throttling will slow the rate of AWS Kinesis stream intake for these inputs by pausing processing until the Journal 
 contention is cleared when the node catches up. If the contention lasts for more than 60 seconds, then the Kinesis consumer will be 
 temporarily stopped until the Journal contention is resolved. This setting can help to slow down the processing of 
