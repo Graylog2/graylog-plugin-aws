@@ -104,6 +104,19 @@ extraction up to the user to define.
 
 Several flow logs integration and analysis examples are described in [this graylog.org blog post](https://www.graylog.org/post/a-practical-approach-to-open-source-network-security-monitoring). 
 
+### Preparation:
+
+This input uses the AWS SDK to communicate with various AWS resources. Therefore, HTTPS communication must be permitted between the Graylog server and each of the resources. 
+If communication on the network segment containing the Graylog cluster is restricted, please make sure that communication to the following endpoints is explicitly permitted.   
+
+```
+monitoring.<region>.amazonaws.com
+cloudtrail.<region>.amazonaws.com
+dynamodb.<region>.amazonaws.com
+kinesis.<region>.amazonaws.com
+logs.<region>.amazonaws.com 
+```
+
 ### Step 1: Enable Flow Logs
 
 This step is only needed when setting up the AWS Flow Logs input (skip if setting up the AWS logs input). There are two 
@@ -274,6 +287,17 @@ To enable throttling, edit the input and check the *Allow throttling this input*
 See the [Input Throttling](http://docs.graylog.org/en/3.0/pages/sending_data.html#throttling-criteria) section of the Graylog docs for more information about how and when throttling will occur.
 
 ## CloudTrail setup and configuration
+
+This input uses the AWS SDK to communicate with various AWS resources. Therefore, HTTPS communication must be permitted between the Graylog server and each of the resources. 
+If communication on the network segment containing the Graylog cluster is restricted, please make sure that communication to the following endpoints is explicitly permitted.   
+
+```
+monitoring.<region>.amazonaws.com
+cloudtrail.<region>.amazonaws.com
+sqs.<region>.amazonaws.com
+sqs-fips.<region>.amazonaws.com
+<bucket-name>.s3-<region>.amazonaws.com 
+```
 
 ### Step 1: Enabling CloudTrail for an AWS region
 
