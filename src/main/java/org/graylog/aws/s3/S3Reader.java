@@ -28,13 +28,13 @@ public class S3Reader {
 
     public String readCompressed(String bucket, String key) throws IOException {
         S3Object o = this.client.getObject(bucket, key);
-        
+
         if (o == null) {
             throw new RuntimeException("Could not get S3 object from bucket [" + bucket + "].");
         }
 
         byte[] bytes = IOUtils.toByteArray(o.getObjectContent());
-        return Tools.decompressGzip(bytes, 10000000);
+        return Tools.decompressGzip(bytes);
     }
 
 }
