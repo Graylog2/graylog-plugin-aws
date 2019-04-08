@@ -215,11 +215,6 @@ public class KinesisTransport extends ThrottleableTransport {
         public ConfigurationRequest getRequestedConfiguration() {
             final ConfigurationRequest r = super.getRequestedConfiguration();
 
-            Map<String, String> regions = Maps.newHashMap();
-            for (Regions region : Regions.values()) {
-                regions.put(region.getName(), region.toString());
-            }
-
             r.addField(new NumberField(
                     CK_KINESIS_MAX_THROTTLED_WAIT_MS,
                     "Throttled wait milliseconds",
@@ -232,7 +227,7 @@ public class KinesisTransport extends ThrottleableTransport {
                     CK_AWS_REGION,
                     "AWS Region",
                     Regions.US_EAST_1.getName(),
-                    regions,
+                    buildRegionChoices(),
                     "The AWS region the Kinesis stream is running in.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
@@ -280,5 +275,22 @@ public class KinesisTransport extends ThrottleableTransport {
 
             return r;
         }
+    }
+
+    /**
+     * Build a list of region choices with both a value (persisted in configuration) and display value (shown to the user).
+     *
+     * The display value is formatted nicely: "EU (London): eu-west-2"
+     * The value is eventually passed to Regions.fromName() to get the actual region object: eu-west-2
+     * @return a choices map with configuration value map keys and display value map values.
+     */
+    static Map<String, String> buildRegionChoices() {
+        Map<String, String> regions = Maps.newHashMap();
+        for (Regions region : Regions.values()) {
+
+            String displayValue = String.format("%s: %s", region.getDescription(), region.getName());
+            regions.put(region.getName(), displayValue);
+        }
+        return regions;
     }
 }
