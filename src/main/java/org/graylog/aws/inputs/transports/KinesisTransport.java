@@ -9,6 +9,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
 import okhttp3.HttpUrl;
+import org.graylog.aws.AWS;
 import org.graylog.aws.AWSObjectMapper;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
@@ -215,11 +216,6 @@ public class KinesisTransport extends ThrottleableTransport {
         public ConfigurationRequest getRequestedConfiguration() {
             final ConfigurationRequest r = super.getRequestedConfiguration();
 
-            Map<String, String> regions = Maps.newHashMap();
-            for (Regions region : Regions.values()) {
-                regions.put(region.getName(), region.toString());
-            }
-
             r.addField(new NumberField(
                     CK_KINESIS_MAX_THROTTLED_WAIT_MS,
                     "Throttled wait milliseconds",
@@ -232,7 +228,7 @@ public class KinesisTransport extends ThrottleableTransport {
                     CK_AWS_REGION,
                     "AWS Region",
                     Regions.US_EAST_1.getName(),
-                    regions,
+                    AWS.buildRegionChoices(),
                     "The AWS region the Kinesis stream is running in.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
