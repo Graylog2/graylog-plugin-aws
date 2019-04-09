@@ -1,22 +1,19 @@
-package org.graylog.aws.inputs.transports;
+package org.graylog.aws;
 
-import org.graylog.aws.cloudwatch.CloudWatchLogEntry;
-import org.graylog.aws.cloudwatch.FlowLogMessage;
-import org.joda.time.DateTime;
 import org.junit.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
-public class KinesisTransportTest {
+public class AWSTest {
 
+    // Verify that region choices are correctly built and formatted.
     @Test
     public void testRegionChoices() {
 
-        Map<String, String> regionChoices = KinesisTransport.buildRegionChoices();
+        Map<String, String> regionChoices = AWS.buildRegionChoices();
 
         // Check format of random region.
         assertTrue(regionChoices.containsValue("EU (London): eu-west-2"));
