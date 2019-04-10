@@ -8,6 +8,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.assistedinject.Assisted;
 import okhttp3.HttpUrl;
+import org.graylog.aws.AWS;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog.aws.AWSObjectMapper;
@@ -166,14 +167,12 @@ public class CloudTrailTransport extends ThrottleableTransport {
         public ConfigurationRequest getRequestedConfiguration() {
             final ConfigurationRequest r = super.getRequestedConfiguration();
 
-            final Map<String, String> regions = Arrays.stream(Regions.values())
-                    .collect(Collectors.toMap(Regions::getName, Regions::toString));
-
+            Map<String, String> regionChoices = AWS.buildRegionChoices();
             r.addField(new DropdownField(
                     CK_AWS_SQS_REGION,
                     "AWS SQS Region",
                     DEFAULT_REGION.getName(),
-                    regions,
+                    regionChoices,
                     "The AWS region the SQS queue is in.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
@@ -182,7 +181,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
                     CK_AWS_S3_REGION,
                     "AWS S3 Region",
                     DEFAULT_REGION.getName(),
-                    regions,
+                    regionChoices,
                     "The AWS region the S3 bucket containing CloudTrail logs is in.",
                     ConfigurationField.Optional.NOT_OPTIONAL
             ));
