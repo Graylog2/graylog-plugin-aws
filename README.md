@@ -23,6 +23,8 @@ Graylog Version Compatibility
 
 | Plugin Version | Graylog Version |
 | -------------- | --------------- |
+| 3.0.x          | 3.0.x           |
+| 2.5.x          | 2.5.x           |
 | 2.4.x          | 2.4.x           |
 | 2.3.x          | 2.3.x           |
 | 1.3.2          | 2.2.2           |
