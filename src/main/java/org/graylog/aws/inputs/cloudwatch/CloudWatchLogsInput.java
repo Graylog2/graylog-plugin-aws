@@ -14,7 +14,7 @@ import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import javax.inject.Inject;
 
 public class CloudWatchLogsInput extends MessageInput {
-    private static final String NAME = "AWS Logs";
+    private static final String NAME = "AWS Logs (deprecated)";
 
     @Inject
     public CloudWatchLogsInput(@Assisted Configuration configuration,
