@@ -6,10 +6,9 @@
 
 This plugin provides the following Graylog modules:
 
-* Input plugin for [AWS Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) network interface connection logs.
-* Input plugin for [AWS Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html) General CloudWatch logs.
+* Input plugin for [AWS Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) network interface connection logs. *NOTE: This input has been deprecated in favor of the new [AWS Kinesis/CloudWatch input](http://docs.graylog.org/en/3.1/pages/integrations/inputs/aws_kinesis_cloudwatch_input.html#aws-kinesis-cloudwatch-input) in [graylog-integrations-plugin](https://github.com/Graylog2/graylog-plugin-integrations).*
+* Input plugin for [AWS Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html) General CloudWatch logs. *NOTE: This input has been deprecated in favor of the new [AWS Kinesis/CloudWatch input](http://docs.graylog.org/en/3.1/pages/integrations/inputs/aws_kinesis_cloudwatch_input.html#aws-kinesis-cloudwatch-input) in [graylog-integrations-plugin](https://github.com/Graylog2/graylog-plugin-integrations).*
 * Input plugin for [AWS CloudTrail](http://aws.amazon.com/cloudtrail/) configuration change logs.
-
 
 This plugin provides the following functionality:
 
