@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import createReactClass from 'create-react-class';
-import { Button } from 'react-bootstrap';
+
+import { Button } from 'components/graylog';
 import { BootstrapModalForm, Input } from 'components/bootstrap';
 import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
@@ -27,8 +28,10 @@ const AWSPluginConfiguration = createReactClass({
   },
 
   getInitialState() {
+    const { config } = this.props;
+
     return {
-      config: ObjectUtils.clone(this.props.config),
+      config: ObjectUtils.clone(config),
     };
   },
 
@@ -37,14 +40,16 @@ const AWSPluginConfiguration = createReactClass({
   },
 
   _updateConfigField(field, value) {
-    const update = ObjectUtils.clone(this.state.config);
+    const { config } = this.state;
+
+    const update = ObjectUtils.clone(config);
     update[field] = value;
     this.setState({ config: update });
   },
 
   _onCheckboxClick(field, ref) {
     return () => {
-      this._updateConfigField(field, this.refs[ref].getChecked());
+      this._updateConfigField(field, this[ref].getChecked());
     };
   },
 
@@ -55,17 +60,17 @@ const AWSPluginConfiguration = createReactClass({
   },
 
   _onUpdate(field) {
-    return e => {
+    return (e) => {
       this._updateConfigField(field, e.target.value);
     };
   },
 
   _openModal() {
-    this.refs.awsConfigModal.open();
+    this.awsConfigModal.open();
   },
 
   _closeModal() {
-    this.refs.awsConfigModal.close();
+    this.awsConfigModal.close();
   },
 
   _resetConfig() {
@@ -130,101 +135,91 @@ const AWSPluginConfiguration = createReactClass({
           </Button>
         </IfPermitted>
 
-        <BootstrapModalForm
-          ref="awsConfigModal"
-          title="Update AWS Plugin Configuration"
-          onSubmitForm={this._saveConfig}
-          onModalClose={this._resetConfig}
-          submitButtonText="Save">
+        <BootstrapModalForm ref={(elem) => { this.awsConfigModal = elem; }}
+                            title="Update AWS Plugin Configuration"
+                            onSubmitForm={this._saveConfig}
+                            onModalClose={this._resetConfig}
+                            submitButtonText="Save">
           <fieldset>
-            <Input
-              id="aws-lookups-enabled"
-              type="checkbox"
-              ref="lookupsEnabled"
-              label="Run AWS instance detail lookups for IP addresses?"
-              help={
-                <span>
+            <Input id="aws-lookups-enabled"
+                   type="checkbox"
+                   ref={(elem) => { this.lookupsEnabled = elem; }}
+                   label="Run AWS instance detail lookups for IP addresses?"
+                   help={(
+                     <span>
                   When enabled, a message processor will try to identify IP
                   addresses of your AWS entities (like EC2, ELB, RDS, ...) and
                   add additional information abut the service or instance behind
                   it. It can take up to a minute for a change of this to take
                   effect.
-                </span>
-              }
-              name="lookups_enabled"
-              checked={this.state.config.lookups_enabled}
-              onChange={this._onCheckboxClick(
-                'lookups_enabled',
-                'lookupsEnabled',
-              )}
-            />
+                     </span>
+)}
+                   name="lookups_enabled"
+                   checked={this.state.config.lookups_enabled}
+                   onChange={this._onCheckboxClick(
+                     'lookups_enabled',
+                     'lookupsEnabled',
+                   )} />
 
-            <Input
-              id="aws-access-key"
-              type="text"
-              label="AWS Access Key"
-              help={
-                <span>
+            <Input id="aws-access-key"
+                   type="text"
+                   label="AWS Access Key"
+                   help={(
+                     <span>
                   Note that this will only be used in encrypted connections but
                   stored in plaintext. Please consult the documentation for
                   suggested rights to assign to the underlying IAM user.
-                </span>
-              }
-              name="access_key"
-              value={this.state.config.access_key}
-              onChange={this._onUpdate('access_key')}
-            />
+                     </span>
+)}
+                   name="access_key"
+                   value={this.state.config.access_key}
+                   onChange={this._onUpdate('access_key')} />
 
-            <Input
-              id="aws-secret-key"
-              type="text"
-              label="AWS Secret Key"
-              help={
-                <span>
+            <Input id="aws-secret-key"
+                   type="text"
+                   label="AWS Secret Key"
+                   help={(
+                     <span>
                   Note that this will only be used in encrypted connections but
                   stored in plaintext. Please consult the documentation for
                   suggested rights to assign to the underlying IAM user.
-                </span>
-              }
-              name="secret_key"
-              value={this.state.config.secret_key}
-              onChange={this._onUpdate('secret_key')}
-            />
+                     </span>
+)}
+                   name="secret_key"
+                   value={this.state.config.secret_key}
+                   onChange={this._onUpdate('secret_key')} />
 
-            <Input
-              id="aws-lookup-regions"
-              type="text"
-              label="Lookup regions"
-              help={
-                <span>
+            <Input id="aws-lookup-regions"
+                   type="text"
+                   label="Lookup regions"
+                   help={(
+                     <span>
                   The AWS instance lookup message processor keeps a table of
                   instances for fast address translation. Define the AWS regions
                   you want to include in the tables. This should be all regions
                   you run AWS services in. Remember that your IAM user needs
                   permission for these regions or you will see warnings in your
                   graylog-server log files.
-                </span>
-              }
-              name="lookup_regions"
-              value={this.state.config.lookup_regions}
-              onChange={this._onUpdate('lookup_regions')}
-            />
+                     </span>
+)}
+                   name="lookup_regions"
+                   value={this.state.config.lookup_regions}
+                   onChange={this._onUpdate('lookup_regions')} />
 
-            <Input
-              id="aws-proxy-enabled"
-              type="checkbox"
-              ref="proxyEnabled"
-              label="Use HTTP proxy?"
-              help={
-                <span>
-                  When enabled, we'll access the AWS APIs through the HTTP proxy configured (<code>http_proxy_uri</code>)
-                  in your Graylog configuration file.<br/>
-                  <em>Important:</em> You have to restart all AWS inputs for this configuration to take effect.
-                </span>}
-              name="proxy_enabled"
-              checked={this.state.config.proxy_enabled}
-              onChange={this._onCheckboxClick('proxy_enabled', 'proxyEnabled')}
-            />
+            <Input id="aws-proxy-enabled"
+                   type="checkbox"
+                   ref={(elem) => { this.proxyEnabled = elem; }}
+                   label="Use HTTP proxy?"
+                   help={(
+                     <span>
+                  When enabled, we&apos;ll access the AWS APIs through the HTTP proxy configured (<code>http_proxy_uri</code>)
+                  in your Graylog configuration file.<br />
+                       <em>Important:</em> You have to restart all AWS inputs for this configuration to take effect.
+                     </span>
+)}
+                   name="proxy_enabled"
+                   checked={this.state.config.proxy_enabled}
+                   onChange={this._onCheckboxClick('proxy_enabled', 'proxyEnabled')} />
           </fieldset>
         </BootstrapModalForm>
       </div>
