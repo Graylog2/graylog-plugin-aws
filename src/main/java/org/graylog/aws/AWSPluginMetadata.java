@@ -28,7 +28,7 @@ public class AWSPluginMetadata implements PluginMetaData {
 
     @Override
     public URI getURL() {
-        return URI.create("https://www.graylog.com/");
+        return URI.create("https://github.com/Graylog2/graylog-plugin-aws/");
     }
 
     @Override
