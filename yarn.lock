@@ -2827,7 +2827,7 @@ graceful-fs@^4.1.2:
     prop-types "15.7.2"
     react "16.12.0"
     react-addons-pure-render-mixin "15.6.2"
-    react-bootstrap "0.31.5"
+    react-bootstrap "0.33.1"
     react-dom "16.12.0"
     react-router "3.2.1"
     react-router-bootstrap "0.23.2"
@@ -4853,6 +4853,16 @@ resolve-url@^0.2.1:
   resolved "https://registry.yarnpkg.com/resolve-url/-/resolve-url-0.2.1.tgz#2c637fe77c893afd2a663fe21aa9080068e2052a"
   integrity sha1-LGN/53yJOv0qZj/iGqkIAGjiBSo=
 
+<<<<<<< HEAD
+=======
+resolve@^1.11.0:
+  version "1.11.0"
+  resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.11.0.tgz#4014870ba296176b86343d50b60f3b50609ce232"
+  integrity sha512-WL2pBDjqT6pGUNSUzMw00o4T7If+z4H2x3Gz893WoUQ5KW8Vr9txp00ykiP16VBaZF5+j/OcXJHZ9+PCvdiDKw==
+  dependencies:
+    path-parse "^1.0.6"
+
+>>>>>>> 2586921... cleanup
 resolve@^1.12.0:
   version "1.12.0"
   resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.12.0.tgz#3fc644a35c84a48554609ff26ec52b66fa577df6"
@@ -4860,7 +4870,11 @@ resolve@^1.12.0:
   dependencies:
     path-parse "^1.0.6"
 
+<<<<<<< HEAD
 resolve@^1.13.1, resolve@^1.14.2:
+=======
+resolve@^1.13.1:
+>>>>>>> 2586921... cleanup
   version "1.15.1"
   resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.15.1.tgz#27bdcdeffeaf2d6244b95bb0f9f4b4653451f3e8"
   integrity sha512-84oo6ZTtoTUpjgNEr5SJyzQhzL72gaRodsSfyxC/AXRvwu0Yse9H8eF9IpGo7b8YetZhlI6v7ZQ6bKBFV/6S7w==
