@@ -26,4 +26,33 @@ public class AWSPluginConfigurationTest {
 
         assertThat(config.getLookupRegions()).isEmpty();
     }
+
+    @Test
+    public void encryptsSecretKeyAndGeneratesSalt() {
+        final AWSPluginConfiguration config = createDefault().toBuilder()
+                .secretKey("verysecret", "myencryptionKey!")
+                .build();
+
+        assertThat(config.encryptedSecretKey()).isNotEqualTo("verysecret");
+        assertThat(config.secretKeySalt()).isNotBlank();
+        assertThat(config.secretKey("myencryptionKey!")).isEqualTo("verysecret");
+    }
+
+    @Test
+    public void builderDoesNotTamperWithEncryptedSecretKey() {
+        final AWSPluginConfiguration config = createDefault().toBuilder()
+                .secretKey("verysecret", "myencryptionKey!")
+                .build();
+
+        final AWSPluginConfiguration newConfig = config.toBuilder()
+                .accessKey("somethingElse")
+                .build();
+
+        assertThat(newConfig.secretKey("myencryptionKey!")).isEqualTo("verysecret");
+    }
+
+    @Test
+    public void returnsEmptyStringIfEncryptedSecretKeyIsNotSet() {
+        assertThat(createDefault().secretKey("foo")).isNull();
+    }
 }
