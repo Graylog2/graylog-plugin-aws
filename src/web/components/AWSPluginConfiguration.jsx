@@ -182,8 +182,8 @@ class AWSPluginConfiguration extends React.Component {
                    label="AWS Secret Key"
                    help={(
                      <span>
-                       Note that this will only be used in encrypted connections but
-                       stored in plaintext. Please consult the documentation for
+                       Note that this will only be used in encrypted connections and will be
+                       stored encrypted (using the system secret). Please consult the documentation for
                        suggested rights to assign to the underlying IAM user.
                      </span>
 )}
