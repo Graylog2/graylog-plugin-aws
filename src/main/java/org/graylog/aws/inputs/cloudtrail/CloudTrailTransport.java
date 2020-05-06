@@ -9,9 +9,9 @@ import com.google.common.eventbus.Subscribe;
 import com.google.inject.assistedinject.Assisted;
 import okhttp3.HttpUrl;
 import org.graylog.aws.AWS;
+import org.graylog.aws.AWSObjectMapper;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
-import org.graylog.aws.AWSObjectMapper;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.cluster.ClusterConfigService;
@@ -35,9 +35,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class CloudTrailTransport extends ThrottleableTransport {
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailTransport.class);
@@ -56,6 +54,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private final ServerStatus serverStatus;
     private final URI httpProxyUri;
     private final LocalMetricRegistry localRegistry;
+    private final org.graylog2.Configuration systemConfiguration;
     private final ClusterConfigService clusterConfigService;
     private final ObjectMapper objectMapper;
 
@@ -63,6 +62,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
 
     @Inject
     public CloudTrailTransport(@Assisted final Configuration configuration,
+                               final org.graylog2.Configuration systemConfiguration,
                                final ClusterConfigService clusterConfigService,
                                final EventBus serverEventBus,
                                final ServerStatus serverStatus,
@@ -70,6 +70,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
                                @Named("http_proxy_uri") @Nullable URI httpProxyUri,
                                LocalMetricRegistry localRegistry) {
         super(serverEventBus, configuration);
+        this.systemConfiguration = systemConfiguration;
 
         this.clusterConfigService = clusterConfigService;
         this.serverStatus = serverStatus;
@@ -118,6 +119,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
         final HttpUrl proxyUrl = config.proxyEnabled() && httpProxyUri != null ? HttpUrl.get(httpProxyUri) : null;
 
         final AWSAuthProvider authProvider = new AWSAuthProvider(
+                systemConfiguration,
                 config,
                 input.getConfiguration().getString(CK_ACCESS_KEY),
                 input.getConfiguration().getString(CK_SECRET_KEY),
