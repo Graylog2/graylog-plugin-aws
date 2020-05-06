@@ -1,11 +1,17 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import createReactClass from 'create-react-class';
+import CombinedProvider from 'injection/CombinedProvider';
 
+import URLUtils from 'util/URLUtils';
+import fetch from 'logic/rest/FetchProvider';
 import { Button } from 'components/graylog';
 import { BootstrapModalForm, Input } from 'components/bootstrap';
 import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
+import { PLUGIN_PACKAGE } from '../Constants';
+
+const { ConfigurationsActions } = CombinedProvider.get('Configurations');
 
 const AWSPluginConfiguration = createReactClass({
   displayName: 'AWSPluginConfiguration',
@@ -28,29 +34,34 @@ const AWSPluginConfiguration = createReactClass({
   },
 
   getInitialState() {
-    const { config } = this.props;
+    const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = this.props;
 
     return {
       config: ObjectUtils.clone(config),
+      update: configWithoutSecretKey,
     };
   },
 
   componentWillReceiveProps(newProps) {
-    this.setState({ config: ObjectUtils.clone(newProps.config) });
+    const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = newProps;
+    this.setState({
+      config: ObjectUtils.clone(config),
+      update: ObjectUtils.clone(configWithoutSecretKey),
+    });
   },
 
   _updateConfigField(field, value) {
-    const { config } = this.state;
-
-    const update = ObjectUtils.clone(config);
-    update[field] = value;
-    this.setState({ config: update });
+    this.setState(({ update }) => ({ update: { ...update, [field]: value } }));
   },
 
   _onCheckboxClick(field, ref) {
     return () => {
       this._updateConfigField(field, this[ref].getChecked());
     };
+  },
+
+  _onFocusSecretKey() {
+    this.setState(({ update }) => ({ update: { ...update, secret_key: '' } }));
   },
 
   _onSelect(field) {
@@ -78,13 +89,19 @@ const AWSPluginConfiguration = createReactClass({
     this.setState(this.getInitialState());
   },
 
+  _postConfigUpdate(update) {
+    const url = URLUtils.qualifyUrl('/plugins/org.graylog.aws/config');
+    return fetch('PUT', url, update);
+  },
+
   _saveConfig() {
-    this.props.updateConfig(this.state.config).then(() => {
-      this._closeModal();
-    });
+    this._postConfigUpdate(this.state.update)
+      .then(() => ConfigurationsActions.list(PLUGIN_PACKAGE))
+      .then(() => this._closeModal());
   },
 
   render() {
+    const { config, update } = this.state;
     return (
       <div>
         <h3>AWS Plugin Configuration</h3>
@@ -99,33 +116,33 @@ const AWSPluginConfiguration = createReactClass({
         <dl className="deflist">
           <dt>Instance detail lookups:</dt>
           <dd>
-            {this.state.config.lookups_enabled === true
+            {config.lookups_enabled === true
               ? 'Enabled'
               : 'Disabled'}
           </dd>
 
           <dt>Connect through proxy:</dt>
           <dd>
-            {this.state.config.proxy_enabled === true
+            {config.proxy_enabled === true
               ? 'Enabled'
               : 'Disabled'}
           </dd>
 
           <dt>Lookup regions:</dt>
           <dd>
-            {this.state.config.lookup_regions
-              ? this.state.config.lookup_regions
+            {config.lookup_regions
+              ? config.lookup_regions
               : '[not set]'}
           </dd>
 
           <dt>Access Key:</dt>
           <dd>
-            {this.state.config.access_key ? this.state.config.access_key : '[not set]'}
+            {config.access_key ? config.access_key : '[not set]'}
           </dd>
 
           <dt>Secret Key:</dt>
           <dd>
-            {this.state.config.secret_key ? '***********' : '[not set]'}
+            {config.secret_key ? '***********' : '[not set]'}
           </dd>
         </dl>
 
@@ -155,7 +172,7 @@ const AWSPluginConfiguration = createReactClass({
                      </span>
 )}
                    name="lookups_enabled"
-                   checked={this.state.config.lookups_enabled}
+                   checked={update.lookups_enabled}
                    onChange={this._onCheckboxClick(
                      'lookups_enabled',
                      'lookupsEnabled',
@@ -172,11 +189,11 @@ const AWSPluginConfiguration = createReactClass({
                      </span>
 )}
                    name="access_key"
-                   value={this.state.config.access_key}
+                   value={update.access_key}
                    onChange={this._onUpdate('access_key')} />
 
             <Input id="aws-secret-key"
-                   type="text"
+                   type="password"
                    label="AWS Secret Key"
                    help={(
                      <span>
@@ -186,7 +203,8 @@ const AWSPluginConfiguration = createReactClass({
                      </span>
 )}
                    name="secret_key"
-                   value={this.state.config.secret_key}
+                   value={update.secret_key !== undefined ? update.secret_key : config.secret_key}
+                   onFocus={this._onFocusSecretKey}
                    onChange={this._onUpdate('secret_key')} />
 
             <Input id="aws-lookup-regions"
@@ -203,7 +221,7 @@ const AWSPluginConfiguration = createReactClass({
                      </span>
 )}
                    name="lookup_regions"
-                   value={this.state.config.lookup_regions}
+                   value={update.lookup_regions}
                    onChange={this._onUpdate('lookup_regions')} />
 
             <Input id="aws-proxy-enabled"
@@ -218,7 +236,7 @@ const AWSPluginConfiguration = createReactClass({
                      </span>
 )}
                    name="proxy_enabled"
-                   checked={this.state.config.proxy_enabled}
+                   checked={update.proxy_enabled}
                    onChange={this._onCheckboxClick('proxy_enabled', 'proxyEnabled')} />
           </fieldset>
         </BootstrapModalForm>
