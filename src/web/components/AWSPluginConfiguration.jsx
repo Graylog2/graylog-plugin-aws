@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import createReactClass from 'create-react-class';
 import CombinedProvider from 'injection/CombinedProvider';
 
 import URLUtils from 'util/URLUtils';
@@ -13,34 +12,18 @@ import { PLUGIN_API_ENDPOINT, PLUGIN_PACKAGE } from '../Constants';
 
 const { ConfigurationsActions } = CombinedProvider.get('Configurations');
 
-const AWSPluginConfiguration = createReactClass({
-  displayName: 'AWSPluginConfiguration',
+class AWSPluginConfiguration extends React.Component {
+  constructor(props) {
+    super(props);
 
-  propTypes: {
-    config: PropTypes.object,
-  },
-
-  getDefaultProps() {
-    return {
-      config: {
-        lookups_enabled: false,
-        lookup_regions: 'us-east-1,us-west-1,us-west-2,eu-west-1,eu-central-1',
-        access_key: '',
-        secret_key: '',
-        proxy_enabled: false,
-      },
-    };
-  },
-
-  getInitialState() {
     // eslint-disable-next-line camelcase
-    const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = this.props;
+    const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = props;
 
     return {
       config: ObjectUtils.clone(config),
       update: configWithoutSecretKey,
     };
-  },
+  }
 
   componentWillReceiveProps(newProps) {
     // eslint-disable-next-line camelcase
@@ -49,58 +32,58 @@ const AWSPluginConfiguration = createReactClass({
       config: ObjectUtils.clone(config),
       update: ObjectUtils.clone(configWithoutSecretKey),
     });
-  },
+  }
 
-  _updateConfigField(field, value) {
+  _updateConfigField = (field, value) => {
     this.setState(({ update }) => ({ update: { ...update, [field]: value } }));
-  },
+  };
 
-  _onCheckboxClick(field, ref) {
+  _onCheckboxClick = (field, ref) => {
     return () => {
       this._updateConfigField(field, this[ref].getChecked());
     };
-  },
+  };
 
-  _onFocusSecretKey() {
+  _onFocusSecretKey = () => {
     this.setState(({ update }) => ({ update: { ...update, secret_key: '' } }));
-  },
+  };
 
-  _onSelect(field) {
+  _onSelect = (field) => {
     return (selection) => {
       this._updateConfigField(field, selection);
     };
-  },
+  };
 
-  _onUpdate(field) {
+  _onUpdate = (field) => {
     return (e) => {
       this._updateConfigField(field, e.target.value);
     };
-  },
+  };
 
-  _openModal() {
+  _openModal = () => {
     this.awsConfigModal.open();
-  },
+  };
 
-  _closeModal() {
+  _closeModal = () => {
     this.awsConfigModal.close();
-  },
+  };
 
-  _resetConfig() {
+  _resetConfig = () => {
     // Reset to initial state when the modal is closed without saving.
     this.setState(this.getInitialState());
-  },
+  };
 
-  _postConfigUpdate(update) {
+  _postConfigUpdate = (update) => {
     const url = URLUtils.qualifyUrl(PLUGIN_API_ENDPOINT);
     return fetch('PUT', url, update);
-  },
+  };
 
-  _saveConfig() {
+  _saveConfig = () => {
     const { update } = this.state;
     this._postConfigUpdate(update)
       .then(() => ConfigurationsActions.list(PLUGIN_PACKAGE))
       .then(() => this._closeModal());
-  },
+  };
 
   render() {
     const { config, update } = this.state;
@@ -244,7 +227,21 @@ const AWSPluginConfiguration = createReactClass({
         </BootstrapModalForm>
       </div>
     );
+  }
+}
+
+AWSPluginConfiguration.propTypes = {
+  config: PropTypes.object,
+};
+
+AWSPluginConfiguration.defaultProps = {
+  config: {
+    lookups_enabled: false,
+    lookup_regions: 'us-east-1,us-west-1,us-west-2,eu-west-1,eu-central-1',
+    access_key: '',
+    secret_key: '',
+    proxy_enabled: false,
   },
-});
+};
 
 export default AWSPluginConfiguration;
