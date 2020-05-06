@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Strings;
 import org.graylog2.Configuration;
 import org.graylog2.migrations.Migration;
 import org.graylog2.plugin.cluster.ClusterConfigService;
@@ -43,7 +44,7 @@ public class V20200505121200_EncryptAWSSecretKey extends Migration {
                 LegacyAWSPluginConfiguration.class
         );
 
-        if (legacyConfiguration != null) {
+        if (legacyConfiguration != null && !Strings.isNullOrEmpty(legacyConfiguration.secretKey())) {
             final AWSPluginConfiguration migratedPluginConfiguration = AWSPluginConfiguration.fromLegacyConfig(legacyConfiguration, systemConfiguration);
 
             clusterConfigService.write(CLUSTER_CONFIG_TYPE, migratedPluginConfiguration);
