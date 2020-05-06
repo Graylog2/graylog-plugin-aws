@@ -1,12 +1,15 @@
 package org.graylog.aws.processors.instancelookup;
 
 import com.codahale.metrics.MetricRegistry;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import okhttp3.HttpUrl;
 import org.graylog.aws.AWS;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
+import org.graylog.aws.migrations.V20200505121200_EncryptAWSSecretKey;
 import org.graylog2.Configuration;
 import org.graylog2.plugin.Message;
 import org.graylog2.plugin.Messages;
@@ -59,6 +62,9 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
             @Override
             public void run() {
                 try {
+                    // TODO: This should be removed when we can ensure that migrations were run before starting anything else
+                    waitForMigrationCompletion(clusterConfigService);
+
                     config = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
                             AWSPluginConfiguration.createDefault());
 
@@ -72,7 +78,7 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
                         return;
                     }
 
-                    final AWSAuthProvider awsAuthProvider = new AWSAuthProvider(config);
+                    final AWSAuthProvider awsAuthProvider = new AWSAuthProvider(configuration, config);
 
                     LOG.debug("Refreshing AWS instance lookup table.");
 
@@ -104,6 +110,16 @@ public class AWSInstanceNameLookupProcessor implements MessageProcessor {
         );
 
         executor.scheduleWithFixedDelay(refresh, 0, 60, TimeUnit.SECONDS);
+    }
+
+    private void waitForMigrationCompletion(ClusterConfigService clusterConfigService) throws java.util.concurrent.ExecutionException, com.github.rholder.retry.RetryException {
+        final Retryer<Boolean> waitingForMigrationCompletion = RetryerBuilder.<Boolean>newBuilder()
+                .retryIfResult((result) -> result == null || !result)
+                .build();
+
+        waitingForMigrationCompletion.call(() -> clusterConfigService.get(
+                V20200505121200_EncryptAWSSecretKey.MigrationCompleted.class
+        ) != null);
     }
 
     @Override
