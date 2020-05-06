@@ -9,7 +9,7 @@ import { Button } from 'components/graylog';
 import { BootstrapModalForm, Input } from 'components/bootstrap';
 import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
-import { PLUGIN_PACKAGE } from '../Constants';
+import { PLUGIN_API_ENDPOINT, PLUGIN_PACKAGE } from '../Constants';
 
 const { ConfigurationsActions } = CombinedProvider.get('Configurations');
 
@@ -18,7 +18,6 @@ const AWSPluginConfiguration = createReactClass({
 
   propTypes: {
     config: PropTypes.object,
-    updateConfig: PropTypes.func.isRequired,
   },
 
   getDefaultProps() {
@@ -34,6 +33,7 @@ const AWSPluginConfiguration = createReactClass({
   },
 
   getInitialState() {
+    // eslint-disable-next-line camelcase
     const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = this.props;
 
     return {
@@ -43,6 +43,7 @@ const AWSPluginConfiguration = createReactClass({
   },
 
   componentWillReceiveProps(newProps) {
+    // eslint-disable-next-line camelcase
     const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = newProps;
     this.setState({
       config: ObjectUtils.clone(config),
@@ -90,12 +91,13 @@ const AWSPluginConfiguration = createReactClass({
   },
 
   _postConfigUpdate(update) {
-    const url = URLUtils.qualifyUrl('/plugins/org.graylog.aws/config');
+    const url = URLUtils.qualifyUrl(PLUGIN_API_ENDPOINT);
     return fetch('PUT', url, update);
   },
 
   _saveConfig() {
-    this._postConfigUpdate(this.state.update)
+    const { update } = this.state;
+    this._postConfigUpdate(update)
       .then(() => ConfigurationsActions.list(PLUGIN_PACKAGE))
       .then(() => this._closeModal());
   },
@@ -164,11 +166,11 @@ const AWSPluginConfiguration = createReactClass({
                    label="Run AWS instance detail lookups for IP addresses?"
                    help={(
                      <span>
-                  When enabled, a message processor will try to identify IP
-                  addresses of your AWS entities (like EC2, ELB, RDS, ...) and
-                  add additional information abut the service or instance behind
-                  it. It can take up to a minute for a change of this to take
-                  effect.
+                       When enabled, a message processor will try to identify IP
+                       addresses of your AWS entities (like EC2, ELB, RDS, ...) and
+                       add additional information abut the service or instance behind
+                       it. It can take up to a minute for a change of this to take
+                       effect.
                      </span>
 )}
                    name="lookups_enabled"
@@ -183,9 +185,9 @@ const AWSPluginConfiguration = createReactClass({
                    label="AWS Access Key"
                    help={(
                      <span>
-                  Note that this will only be used in encrypted connections but
-                  stored in plaintext. Please consult the documentation for
-                  suggested rights to assign to the underlying IAM user.
+                       Note that this will only be used in encrypted connections but
+                       stored in plaintext. Please consult the documentation for
+                       suggested rights to assign to the underlying IAM user.
                      </span>
 )}
                    name="access_key"
@@ -197,9 +199,9 @@ const AWSPluginConfiguration = createReactClass({
                    label="AWS Secret Key"
                    help={(
                      <span>
-                  Note that this will only be used in encrypted connections but
-                  stored in plaintext. Please consult the documentation for
-                  suggested rights to assign to the underlying IAM user.
+                       Note that this will only be used in encrypted connections but
+                       stored in plaintext. Please consult the documentation for
+                       suggested rights to assign to the underlying IAM user.
                      </span>
 )}
                    name="secret_key"
@@ -212,12 +214,12 @@ const AWSPluginConfiguration = createReactClass({
                    label="Lookup regions"
                    help={(
                      <span>
-                  The AWS instance lookup message processor keeps a table of
-                  instances for fast address translation. Define the AWS regions
-                  you want to include in the tables. This should be all regions
-                  you run AWS services in. Remember that your IAM user needs
-                  permission for these regions or you will see warnings in your
-                  graylog-server log files.
+                       The AWS instance lookup message processor keeps a table of
+                       instances for fast address translation. Define the AWS regions
+                       you want to include in the tables. This should be all regions
+                       you run AWS services in. Remember that your IAM user needs
+                       permission for these regions or you will see warnings in your
+                       graylog-server log files.
                      </span>
 )}
                    name="lookup_regions"
@@ -230,8 +232,8 @@ const AWSPluginConfiguration = createReactClass({
                    label="Use HTTP proxy?"
                    help={(
                      <span>
-                  When enabled, we&apos;ll access the AWS APIs through the HTTP proxy configured (<code>http_proxy_uri</code>)
-                  in your Graylog configuration file.<br />
+                       When enabled, we&apos;ll access the AWS APIs through the HTTP proxy configured (<code>http_proxy_uri</code>)
+                       in your Graylog configuration file.<br />
                        <em>Important:</em> You have to restart all AWS inputs for this configuration to take effect.
                      </span>
 )}
