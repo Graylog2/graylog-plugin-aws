@@ -19,7 +19,7 @@ class AWSPluginConfiguration extends React.Component {
     // eslint-disable-next-line camelcase
     const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = props;
 
-    return {
+    this.state = {
       config: ObjectUtils.clone(config),
       update: configWithoutSecretKey,
     };
