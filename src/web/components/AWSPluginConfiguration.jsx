@@ -8,21 +8,21 @@ import { Button } from 'components/graylog';
 import { BootstrapModalForm, Input } from 'components/bootstrap';
 import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
-import { PLUGIN_API_ENDPOINT, PLUGIN_PACKAGE } from '../Constants';
+import { PLUGIN_API_ENDPOINT, PLUGIN_CONFIG_CLASS_NAME, PLUGIN_PACKAGE } from '../Constants';
 
 const { ConfigurationsActions } = CombinedProvider.get('Configurations');
+
+// eslint-disable-next-line camelcase
+const _initialState = ({ config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } }) => ({
+  config: ObjectUtils.clone(config),
+  update: configWithoutSecretKey,
+});
 
 class AWSPluginConfiguration extends React.Component {
   constructor(props) {
     super(props);
 
-    // eslint-disable-next-line camelcase
-    const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = props;
-
-    this.state = {
-      config: ObjectUtils.clone(config),
-      update: configWithoutSecretKey,
-    };
+    this.state = _initialState(props);
   }
 
   componentWillReceiveProps(newProps) {
@@ -70,7 +70,7 @@ class AWSPluginConfiguration extends React.Component {
 
   _resetConfig = () => {
     // Reset to initial state when the modal is closed without saving.
-    this.setState(this.getInitialState());
+    this.setState(_initialState(this.props));
   };
 
   _postConfigUpdate = (update) => {
@@ -81,7 +81,7 @@ class AWSPluginConfiguration extends React.Component {
   _saveConfig = () => {
     const { update } = this.state;
     this._postConfigUpdate(update)
-      .then(() => ConfigurationsActions.list(PLUGIN_PACKAGE))
+      .then(() => ConfigurationsActions.list(PLUGIN_CONFIG_CLASS_NAME))
       .then(() => this._closeModal());
   };
 
