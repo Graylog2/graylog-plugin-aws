@@ -8,7 +8,7 @@ import { Button } from 'components/graylog';
 import { BootstrapModalForm, Input } from 'components/bootstrap';
 import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
-import { PLUGIN_API_ENDPOINT, PLUGIN_CONFIG_CLASS_NAME, PLUGIN_PACKAGE } from '../Constants';
+import { PLUGIN_API_ENDPOINT, PLUGIN_CONFIG_CLASS_NAME } from '../Constants';
 
 const { ConfigurationsActions } = CombinedProvider.get('Configurations');
 
@@ -25,13 +25,8 @@ class AWSPluginConfiguration extends React.Component {
     this.state = _initialState(props);
   }
 
-  componentWillReceiveProps(newProps) {
-    // eslint-disable-next-line camelcase
-    const { config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } } = newProps;
-    this.setState({
-      config: ObjectUtils.clone(config),
-      update: ObjectUtils.clone(configWithoutSecretKey),
-    });
+  static getDerivedStateFromProps(newProps) {
+    return _initialState(newProps);
   }
 
   _updateConfigField = (field, value) => {
@@ -231,6 +226,7 @@ class AWSPluginConfiguration extends React.Component {
 }
 
 AWSPluginConfiguration.propTypes = {
+  // eslint-disable-next-line react/no-unused-prop-types
   config: PropTypes.object,
 };
 
