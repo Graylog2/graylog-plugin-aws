@@ -41,7 +41,7 @@ public class V20200505121200_EncryptAWSSecretKeyTest {
 
     @Test
     public void doesNotDoAnyThingForMissingPluginConfig() {
-        when(clusterConfigService.get(eq(PLUGIN_CONFIG_CLASS_NAME), any())).thenReturn(null);
+        mockExistingConfig(null);
 
         this.migration.upgrade();
 
@@ -51,14 +51,13 @@ public class V20200505121200_EncryptAWSSecretKeyTest {
 
     @Test
     public void doesNotDoAnyThingForExistingPluginConfigWithoutSecretKey() {
-        when(clusterConfigService.get(eq(PLUGIN_CONFIG_CLASS_NAME), any()))
-                .thenReturn(V20200505121200_EncryptAWSSecretKey.LegacyAWSPluginConfiguration.create(
-                        true,
-                        "lookupRegions",
-                        "something",
-                        "",
-                        true
-                ));
+        mockExistingConfig(V20200505121200_EncryptAWSSecretKey.LegacyAWSPluginConfiguration.create(
+                true,
+                "lookupRegions",
+                "something",
+                "",
+                true
+        ));
 
         this.migration.upgrade();
 
@@ -68,14 +67,13 @@ public class V20200505121200_EncryptAWSSecretKeyTest {
 
     @Test
     public void encryptsSecretKeyIfPresent() {
-        when(clusterConfigService.get(eq(PLUGIN_CONFIG_CLASS_NAME), any()))
-                .thenReturn(V20200505121200_EncryptAWSSecretKey.LegacyAWSPluginConfiguration.create(
-                        true,
-                        "lookupRegions",
-                        "something",
-                        "verySecretKey",
-                        true
-                ));
+        mockExistingConfig(V20200505121200_EncryptAWSSecretKey.LegacyAWSPluginConfiguration.create(
+                true,
+                "lookupRegions",
+                "something",
+                "verySecretKey",
+                true
+        ));
         when(configuration.getPasswordSecret()).thenReturn("systemSecret1234");
 
         this.migration.upgrade();
@@ -89,5 +87,10 @@ public class V20200505121200_EncryptAWSSecretKeyTest {
 
         assertThat(AESTools.decrypt(writtenConfig.encryptedSecretKey(), "systemSecret1234", writtenConfig.secretKeySalt()))
                 .isEqualTo("verySecretKey");
+    }
+
+    private void mockExistingConfig(V20200505121200_EncryptAWSSecretKey.LegacyAWSPluginConfiguration config) {
+        when(clusterConfigService.get(eq(PLUGIN_CONFIG_CLASS_NAME), any()))
+                .thenReturn(config);
     }
 }
