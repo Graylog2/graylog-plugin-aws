@@ -25,8 +25,9 @@ class AWSPluginConfiguration extends React.Component {
     this.state = _initialState(props);
   }
 
-  static getDerivedStateFromProps(newProps) {
-    return _initialState(newProps);
+  // eslint-disable-next-line react/no-deprecated
+  componentWillReceiveProps(newProps) {
+    this.setState(_initialState(newProps));
   }
 
   _updateConfigField = (field, value) => {
