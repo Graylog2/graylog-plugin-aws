@@ -1,90 +1,88 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import createReactClass from 'create-react-class';
+import CombinedProvider from 'injection/CombinedProvider';
 
+import URLUtils from 'util/URLUtils';
+import fetch from 'logic/rest/FetchProvider';
 import { Button } from 'components/graylog';
 import { BootstrapModalForm, Input } from 'components/bootstrap';
 import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
+import { PLUGIN_API_ENDPOINT, PLUGIN_CONFIG_CLASS_NAME } from '../Constants';
 
-const AWSPluginConfiguration = createReactClass({
-  displayName: 'AWSPluginConfiguration',
+const { ConfigurationsActions } = CombinedProvider.get('Configurations');
 
-  propTypes: {
-    config: PropTypes.object,
-    updateConfig: PropTypes.func.isRequired,
-  },
+// eslint-disable-next-line camelcase
+const _initialState = ({ config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } }) => ({
+  config: ObjectUtils.clone(config),
+  update: configWithoutSecretKey,
+});
 
-  getDefaultProps() {
-    return {
-      config: {
-        lookups_enabled: false,
-        lookup_regions: 'us-east-1,us-west-1,us-west-2,eu-west-1,eu-central-1',
-        access_key: '',
-        secret_key: '',
-        proxy_enabled: false,
-      },
-    };
-  },
+class AWSPluginConfiguration extends React.Component {
+  constructor(props) {
+    super(props);
 
-  getInitialState() {
-    const { config } = this.props;
+    this.state = _initialState(props);
+  }
 
-    return {
-      config: ObjectUtils.clone(config),
-    };
-  },
-
+  // eslint-disable-next-line react/no-deprecated
   componentWillReceiveProps(newProps) {
-    this.setState({ config: ObjectUtils.clone(newProps.config) });
-  },
+    this.setState(_initialState(newProps));
+  }
 
-  _updateConfigField(field, value) {
-    const { config } = this.state;
+  _updateConfigField = (field, value) => {
+    this.setState(({ update }) => ({ update: { ...update, [field]: value } }));
+  };
 
-    const update = ObjectUtils.clone(config);
-    update[field] = value;
-    this.setState({ config: update });
-  },
-
-  _onCheckboxClick(field, ref) {
+  _onCheckboxClick = (field, ref) => {
     return () => {
       this._updateConfigField(field, this[ref].getChecked());
     };
-  },
+  };
 
-  _onSelect(field) {
+  _onFocusSecretKey = () => {
+    this.setState(({ update }) => ({ update: { ...update, secret_key: '' } }));
+  };
+
+  _onSelect = (field) => {
     return (selection) => {
       this._updateConfigField(field, selection);
     };
-  },
+  };
 
-  _onUpdate(field) {
+  _onUpdate = (field) => {
     return (e) => {
       this._updateConfigField(field, e.target.value);
     };
-  },
+  };
 
-  _openModal() {
+  _openModal = () => {
     this.awsConfigModal.open();
-  },
+  };
 
-  _closeModal() {
+  _closeModal = () => {
     this.awsConfigModal.close();
-  },
+  };
 
-  _resetConfig() {
+  _resetConfig = () => {
     // Reset to initial state when the modal is closed without saving.
-    this.setState(this.getInitialState());
-  },
+    this.setState(_initialState(this.props));
+  };
 
-  _saveConfig() {
-    this.props.updateConfig(this.state.config).then(() => {
-      this._closeModal();
-    });
-  },
+  _postConfigUpdate = (update) => {
+    const url = URLUtils.qualifyUrl(PLUGIN_API_ENDPOINT);
+    return fetch('PUT', url, update);
+  };
+
+  _saveConfig = () => {
+    const { update } = this.state;
+    this._postConfigUpdate(update)
+      .then(() => ConfigurationsActions.list(PLUGIN_CONFIG_CLASS_NAME))
+      .then(() => this._closeModal());
+  };
 
   render() {
+    const { config, update } = this.state;
     return (
       <div>
         <h3>AWS Plugin Configuration</h3>
@@ -99,33 +97,33 @@ const AWSPluginConfiguration = createReactClass({
         <dl className="deflist">
           <dt>Instance detail lookups:</dt>
           <dd>
-            {this.state.config.lookups_enabled === true
+            {config.lookups_enabled === true
               ? 'Enabled'
               : 'Disabled'}
           </dd>
 
           <dt>Connect through proxy:</dt>
           <dd>
-            {this.state.config.proxy_enabled === true
+            {config.proxy_enabled === true
               ? 'Enabled'
               : 'Disabled'}
           </dd>
 
           <dt>Lookup regions:</dt>
           <dd>
-            {this.state.config.lookup_regions
-              ? this.state.config.lookup_regions
+            {config.lookup_regions
+              ? config.lookup_regions
               : '[not set]'}
           </dd>
 
           <dt>Access Key:</dt>
           <dd>
-            {this.state.config.access_key ? this.state.config.access_key : '[not set]'}
+            {config.access_key ? config.access_key : '[not set]'}
           </dd>
 
           <dt>Secret Key:</dt>
           <dd>
-            {this.state.config.secret_key ? '***********' : '[not set]'}
+            {config.secret_key ? '***********' : '[not set]'}
           </dd>
         </dl>
 
@@ -147,15 +145,15 @@ const AWSPluginConfiguration = createReactClass({
                    label="Run AWS instance detail lookups for IP addresses?"
                    help={(
                      <span>
-                  When enabled, a message processor will try to identify IP
-                  addresses of your AWS entities (like EC2, ELB, RDS, ...) and
-                  add additional information abut the service or instance behind
-                  it. It can take up to a minute for a change of this to take
-                  effect.
+                       When enabled, a message processor will try to identify IP
+                       addresses of your AWS entities (like EC2, ELB, RDS, ...) and
+                       add additional information abut the service or instance behind
+                       it. It can take up to a minute for a change of this to take
+                       effect.
                      </span>
 )}
                    name="lookups_enabled"
-                   checked={this.state.config.lookups_enabled}
+                   checked={update.lookups_enabled}
                    onChange={this._onCheckboxClick(
                      'lookups_enabled',
                      'lookupsEnabled',
@@ -166,27 +164,28 @@ const AWSPluginConfiguration = createReactClass({
                    label="AWS Access Key"
                    help={(
                      <span>
-                  Note that this will only be used in encrypted connections but
-                  stored in plaintext. Please consult the documentation for
-                  suggested rights to assign to the underlying IAM user.
+                       Note that this will only be used in encrypted connections but
+                       stored in plaintext. Please consult the documentation for
+                       suggested rights to assign to the underlying IAM user.
                      </span>
 )}
                    name="access_key"
-                   value={this.state.config.access_key}
+                   value={update.access_key}
                    onChange={this._onUpdate('access_key')} />
 
             <Input id="aws-secret-key"
-                   type="text"
+                   type="password"
                    label="AWS Secret Key"
                    help={(
                      <span>
-                  Note that this will only be used in encrypted connections but
-                  stored in plaintext. Please consult the documentation for
-                  suggested rights to assign to the underlying IAM user.
+                       Note that this will only be used in encrypted connections and will be
+                       stored encrypted (using the system secret). Please consult the documentation for
+                       suggested rights to assign to the underlying IAM user.
                      </span>
 )}
                    name="secret_key"
-                   value={this.state.config.secret_key}
+                   value={update.secret_key !== undefined ? update.secret_key : config.secret_key}
+                   onFocus={this._onFocusSecretKey}
                    onChange={this._onUpdate('secret_key')} />
 
             <Input id="aws-lookup-regions"
@@ -194,16 +193,16 @@ const AWSPluginConfiguration = createReactClass({
                    label="Lookup regions"
                    help={(
                      <span>
-                  The AWS instance lookup message processor keeps a table of
-                  instances for fast address translation. Define the AWS regions
-                  you want to include in the tables. This should be all regions
-                  you run AWS services in. Remember that your IAM user needs
-                  permission for these regions or you will see warnings in your
-                  graylog-server log files.
+                       The AWS instance lookup message processor keeps a table of
+                       instances for fast address translation. Define the AWS regions
+                       you want to include in the tables. This should be all regions
+                       you run AWS services in. Remember that your IAM user needs
+                       permission for these regions or you will see warnings in your
+                       graylog-server log files.
                      </span>
 )}
                    name="lookup_regions"
-                   value={this.state.config.lookup_regions}
+                   value={update.lookup_regions}
                    onChange={this._onUpdate('lookup_regions')} />
 
             <Input id="aws-proxy-enabled"
@@ -212,19 +211,34 @@ const AWSPluginConfiguration = createReactClass({
                    label="Use HTTP proxy?"
                    help={(
                      <span>
-                  When enabled, we&apos;ll access the AWS APIs through the HTTP proxy configured (<code>http_proxy_uri</code>)
-                  in your Graylog configuration file.<br />
+                       When enabled, we&apos;ll access the AWS APIs through the HTTP proxy configured (<code>http_proxy_uri</code>)
+                       in your Graylog configuration file.<br />
                        <em>Important:</em> You have to restart all AWS inputs for this configuration to take effect.
                      </span>
 )}
                    name="proxy_enabled"
-                   checked={this.state.config.proxy_enabled}
+                   checked={update.proxy_enabled}
                    onChange={this._onCheckboxClick('proxy_enabled', 'proxyEnabled')} />
           </fieldset>
         </BootstrapModalForm>
       </div>
     );
+  }
+}
+
+AWSPluginConfiguration.propTypes = {
+  // eslint-disable-next-line react/no-unused-prop-types
+  config: PropTypes.object,
+};
+
+AWSPluginConfiguration.defaultProps = {
+  config: {
+    lookups_enabled: false,
+    lookup_regions: 'us-east-1,us-west-1,us-west-2,eu-west-1,eu-central-1',
+    access_key: '',
+    secret_key: '',
+    proxy_enabled: false,
   },
-});
+};
 
 export default AWSPluginConfiguration;

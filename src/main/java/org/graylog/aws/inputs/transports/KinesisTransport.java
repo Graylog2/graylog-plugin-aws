@@ -4,7 +4,6 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.codahale.metrics.MetricSet;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.assistedinject.Assisted;
@@ -35,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -154,6 +152,7 @@ public class KinesisTransport extends ThrottleableTransport {
         final AWSPluginConfiguration awsConfig = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
                                                                                    AWSPluginConfiguration.createDefault());
         AWSAuthProvider authProvider = new AWSAuthProvider(
+                graylogConfiguration,
                 awsConfig, configuration.getString(CK_ACCESS_KEY),
                 configuration.getString(CK_SECRET_KEY),
                 configuration.getString(CK_AWS_REGION),
