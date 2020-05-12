@@ -6,10 +6,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import org.graylog2.security.AESTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,7 +31,18 @@ public abstract class AWSPluginConfiguration {
     public abstract String accessKey();
 
     @JsonProperty("secret_key")
-    public abstract String secretKey();
+    @Nullable
+    public abstract String encryptedSecretKey();
+    public String secretKey(String encryptionKey) {
+        if (Strings.isNullOrEmpty(encryptedSecretKey())) {
+            return encryptedSecretKey();
+        }
+        return AESTools.decrypt(encryptedSecretKey(), encryptionKey, secretKeySalt());
+    }
+
+    @JsonProperty("secret_key_salt")
+    @Nullable
+    public abstract String secretKeySalt();
 
     @JsonProperty("proxy_enabled")
     public abstract boolean proxyEnabled();
@@ -37,13 +51,15 @@ public abstract class AWSPluginConfiguration {
     public static AWSPluginConfiguration create(@JsonProperty("lookups_enabled") boolean lookupsEnabled,
                                                 @JsonProperty("lookup_regions") String lookupRegions,
                                                 @JsonProperty("access_key") String accessKey,
-                                                @JsonProperty("secret_key") String secretKey,
+                                                @JsonProperty("secret_key") @Nullable String secretKey,
+                                                @JsonProperty("secret_key_salt") @Nullable String secretKeySalt,
                                                 @JsonProperty("proxy_enabled") boolean proxyEnabled) {
         return builder()
                 .lookupsEnabled(lookupsEnabled)
                 .lookupRegions(lookupRegions)
                 .accessKey(accessKey)
-                .secretKey(secretKey)
+                .encryptedSecretKey(secretKey)
+                .secretKeySalt(secretKeySalt)
                 .proxyEnabled(proxyEnabled)
                 .build();
     }
@@ -53,12 +69,13 @@ public abstract class AWSPluginConfiguration {
                 .lookupsEnabled(false)
                 .lookupRegions("")
                 .accessKey("")
-                .secretKey("")
+                .encryptedSecretKey(null)
+                .secretKeySalt(null)
                 .proxyEnabled(false)
                 .build();
     }
 
-    public static Builder builder() {
+    static Builder builder() {
         return new AutoValue_AWSPluginConfiguration.Builder();
     }
 
@@ -92,7 +109,14 @@ public abstract class AWSPluginConfiguration {
 
         public abstract Builder accessKey(String accessKey);
 
-        public abstract Builder secretKey(String secretKey);
+        abstract Builder encryptedSecretKey(String secretKey);
+
+        public Builder secretKey(String secretKey, String encryptionKey) {
+            final String salt = AESTools.generateNewSalt();
+            return encryptedSecretKey(AESTools.encrypt(secretKey, encryptionKey, salt)).secretKeySalt(salt);
+        }
+
+        abstract Builder secretKeySalt(String secretKeySalt);
 
         public abstract Builder proxyEnabled(boolean proxyEnabled);
 
