@@ -40,6 +40,8 @@ public class CloudTrailRecord implements Serializable {
     public String eventType;
     @JsonProperty("recipientAccountId")
     public String recipientAccountId;
+    @JsonProperty("additionalEventData")
+    public Map<String, Object> additionalEventData;
 
     //adding errorMessage 
     @JsonProperty("errorMessage")
@@ -61,6 +63,10 @@ public class CloudTrailRecord implements Serializable {
         m.put("event_type", eventType);
         m.put("recipient_account_id", recipientAccountId);
 
+        if (additionalEventData != null) {
+            m.put("additional_event_data", additionalEventData);
+        }
+
         //adding errorMessage if present
         if (errorMessage != null) {
             m.put("errorMessage", errorMessage);
@@ -74,7 +80,6 @@ public class CloudTrailRecord implements Serializable {
         if (responseElements != null) {
             m.putAll(responseElements.additionalFieldsAsMap());
         }
-
 
         return m;
     }
