@@ -64,7 +64,7 @@ public class CloudTrailRecord implements Serializable {
         m.put("recipient_account_id", recipientAccountId);
 
         if (additionalEventData != null) {
-            m.put("additional_event_data", additionalEventData);
+            m.put("additional_event_data", additionalEventData.toString());
         }
 
         //adding errorMessage if present
