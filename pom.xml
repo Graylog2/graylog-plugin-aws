@@ -8,12 +8,12 @@
     <parent>
         <groupId>org.graylog.plugins</groupId>
         <artifactId>graylog-plugin-web-parent</artifactId>
-        <version>3.3.8</version>
+        <version>3.3.9-SNAPSHOT</version>
         <relativePath>../graylog2-server/graylog-plugin-parent/graylog-plugin-web-parent</relativePath>
     </parent>
 
     <artifactId>graylog-plugin-aws</artifactId>
-    <version>3.3.8</version>
+    <version>3.3.9-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -33,7 +33,7 @@
         <maven.install.skip>true</maven.install.skip>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.site.skip>true</maven.site.skip>
-        <graylog.version>3.3.8</graylog.version>
+        <graylog.version>3.3.9-SNAPSHOT</graylog.version>
         <aws-java-sdk.version>1.11.587</aws-java-sdk.version>
         <aws-kinesis-client.version>1.10.0</aws-kinesis-client.version>
     </properties>
