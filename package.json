@@ -7,7 +7,7 @@
     "url": "https://github.com/graylog-plugin-aws"
   },
   "scripts": {
-    "build": "webpack --bail"
+    "build": "webpack"
   },
   "keywords": [
     "graylog"
