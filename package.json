@@ -7,7 +7,11 @@
     "url": "https://github.com/graylog-plugin-aws"
   },
   "scripts": {
-    "build": "webpack"
+    "build": "webpack",
+    "lint": "eslint --ext js,jsx src"
+  },
+  "eslintConfig": {
+    "extends": "graylog"
   },
   "keywords": [
     "graylog"
