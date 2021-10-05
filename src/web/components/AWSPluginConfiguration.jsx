@@ -16,7 +16,6 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import CombinedProvider from 'injection/CombinedProvider';
 
 import URLUtils from 'util/URLUtils';
 import fetch from 'logic/rest/FetchProvider';
@@ -26,7 +25,7 @@ import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
 import { PLUGIN_API_ENDPOINT, PLUGIN_CONFIG_CLASS_NAME } from '../Constants';
 
-const { ConfigurationsActions } = CombinedProvider.get('Configurations');
+import { ConfigurationActions } from 'stores/configurations/ConfigurationsStore';
 
 // eslint-disable-next-line camelcase
 const _initialState = ({ config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } }) => ({
@@ -93,7 +92,7 @@ class AWSPluginConfiguration extends React.Component {
   _saveConfig = () => {
     const { update } = this.state;
     this._postConfigUpdate(update)
-      .then(() => ConfigurationsActions.list(PLUGIN_CONFIG_CLASS_NAME))
+      .then(() => ConfigurationActions.list(PLUGIN_CONFIG_CLASS_NAME))
       .then(() => this._closeModal());
   };
 
