@@ -16,7 +16,6 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import CombinedProvider from 'injection/CombinedProvider';
 
 import URLUtils from 'util/URLUtils';
 import fetch from 'logic/rest/FetchProvider';
@@ -26,7 +25,7 @@ import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
 import { PLUGIN_API_ENDPOINT, PLUGIN_CONFIG_CLASS_NAME } from '../Constants';
 
-const { ConfigurationsActions } = CombinedProvider.get('Configurations');
+import { ConfigurationsActions } from 'stores/configurations/ConfigurationsStore';
 
 // eslint-disable-next-line camelcase
 const _initialState = ({ config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } }) => ({
