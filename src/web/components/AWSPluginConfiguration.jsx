@@ -19,7 +19,7 @@ import React from 'react';
 
 import URLUtils from 'util/URLUtils';
 import fetch from 'logic/rest/FetchProvider';
-import { Button } from 'components/graylog';
+import { Button } from 'components/bootstrap';
 import { BootstrapModalForm, Input } from 'components/bootstrap';
 import { IfPermitted } from 'components/common';
 import ObjectUtils from 'util/ObjectUtils';
