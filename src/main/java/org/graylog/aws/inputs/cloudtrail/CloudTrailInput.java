@@ -75,4 +75,9 @@ public class CloudTrailInput extends MessageInput {
             super(transport.getConfig(), codec.getConfig());
         }
     }
+
+    @Override
+    public boolean onlyOnePerCluster() {
+        return true;
+    }
 }

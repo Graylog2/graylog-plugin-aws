@@ -16,12 +16,12 @@
  */
 package org.graylog.aws;
 
-import com.google.common.collect.ImmutableSet;
 import org.graylog2.plugin.PluginMetaData;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.Version;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Set;
 
 public class AWSPluginMetadata implements PluginMetaData {
@@ -64,13 +64,6 @@ public class AWSPluginMetadata implements PluginMetaData {
 
     @Override
     public Set<ServerStatus.Capability> getRequiredCapabilities() {
-        return new ImmutableSet.Builder<ServerStatus.Capability>()
-                /*
-                 * This plugin will only start on the graylog-server master node because we are
-                 * mostly working with the AWS REST APIs and running on multiple graylog-server
-                 * nodes would result in data duplication.
-                 */
-                .add(ServerStatus.Capability.MASTER)
-                .build();
+        return Collections.emptySet();
     }
 }
