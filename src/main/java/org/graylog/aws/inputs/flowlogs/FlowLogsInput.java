@@ -79,4 +79,8 @@ public class FlowLogsInput extends MessageInput {
         }
     }
 
+    @Override
+    public boolean onlyOnePerCluster() {
+        return true;
+    }
 }
