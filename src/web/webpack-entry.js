@@ -14,18 +14,12 @@
  * along with this program. If not, see
  * <http://www.mongodb.com/licensing/server-side-public-license>.
  */
-import './webpack-entry';
+import URI from 'urijs';
 
-import { PluginManifest, PluginStore } from 'graylog-web-plugin/plugin';
-import AWSPluginsConfig from 'components/AWSPluginConfiguration';
-import packageJson from '../../package.json';
-import { PLUGIN_CONFIG_CLASS_NAME } from './Constants';
+import AppConfig from 'util/AppConfig';
 
-PluginStore.register(new PluginManifest(packageJson, {
-  systemConfigurations: [
-    {
-      component: AWSPluginsConfig,
-      configType: PLUGIN_CONFIG_CLASS_NAME,
-    },
-  ],
-}));
+// The webpack-dev-server serves the assets from "/"
+const assetPrefix = AppConfig.gl2DevMode() ? '/' : '/assets/plugin/org.graylog.aws.AWSPlugin/';
+
+// If app prefix was not set, we need to tell webpack to load chunks from root instead of the relative URL path
+__webpack_public_path__ = URI.joinPaths(AppConfig.gl2AppPathPrefix(), assetPrefix).path() || assetPrefix;
