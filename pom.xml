@@ -235,7 +235,6 @@
                     <artifactSet>
                         <excludes>
                             <exclude>com.google.guava:guava</exclude>
-                            <exclude>com.fasterxml.jackson.core:*</exclude>
                             <exclude>org.apache.httpcomponents:httpclient</exclude>
                             <exclude>joda-time:joda-time</exclude>
                             <exclude>commons-codec:commons-codec</exclude>
