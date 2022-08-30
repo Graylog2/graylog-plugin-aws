@@ -1,4 +1,4 @@
 @Library('ci-pipeline-shared') _
 
-buildSnapshot()
+buildSnapshot(jdk_version: '17')
 
