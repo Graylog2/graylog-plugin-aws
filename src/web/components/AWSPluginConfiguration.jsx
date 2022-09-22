@@ -144,7 +144,7 @@ class AWSPluginConfiguration extends React.Component {
 
         <IfPermitted permissions="clusterconfigentry:edit">
           <Button bsStyle="info" bsSize="xs" onClick={this._openModal}>
-            Configure
+            Edit configuration
           </Button>
         </IfPermitted>
 
@@ -152,7 +152,7 @@ class AWSPluginConfiguration extends React.Component {
                             title="Update AWS Plugin Configuration"
                             onSubmitForm={this._saveConfig}
                             onModalClose={this._resetConfig}
-                            submitButtonText="Save">
+                            submitButtonText="Update configuration">
           <fieldset>
             <Input id="aws-lookups-enabled"
                    type="checkbox"
