@@ -31,6 +31,7 @@ import { ConfigurationsActions } from 'stores/configurations/ConfigurationsStore
 const _initialState = ({ config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } }) => ({
   config: ObjectUtils.clone(config),
   update: configWithoutSecretKey,
+  showModal: false,
 });
 
 class AWSPluginConfiguration extends React.Component {
@@ -72,11 +73,11 @@ class AWSPluginConfiguration extends React.Component {
   };
 
   _openModal = () => {
-    this.awsConfigModal.open();
+    this.setState({ showModal: true });
   };
 
   _closeModal = () => {
-    this.awsConfigModal.close();
+    this.setState({ showModal: false });
   };
 
   _resetConfig = () => {
@@ -97,7 +98,7 @@ class AWSPluginConfiguration extends React.Component {
   };
 
   render() {
-    const { config, update } = this.state;
+    const { config, update, showModal } = this.state;
     return (
       <div>
         <h3>AWS Plugin Configuration</h3>
@@ -148,10 +149,10 @@ class AWSPluginConfiguration extends React.Component {
           </Button>
         </IfPermitted>
 
-        <BootstrapModalForm ref={(elem) => { this.awsConfigModal = elem; }}
+        <BootstrapModalForm show={showModal}
                             title="Update AWS Plugin Configuration"
                             onSubmitForm={this._saveConfig}
-                            onModalClose={this._resetConfig}
+                            onCancel={this._resetConfig}
                             submitButtonText="Update configuration">
           <fieldset>
             <Input id="aws-lookups-enabled"
