@@ -31,7 +31,7 @@ import { ConfigurationsActions } from 'stores/configurations/ConfigurationsStore
 const _initialState = ({ config, config: { secret_key, secret_key_salt, ...configWithoutSecretKey } }) => ({
   config: ObjectUtils.clone(config),
   update: configWithoutSecretKey,
-  showModal: false,
+  awsConfigModal: false,
 });
 
 class AWSPluginConfiguration extends React.Component {
@@ -73,11 +73,11 @@ class AWSPluginConfiguration extends React.Component {
   };
 
   _openModal = () => {
-    this.setState({ showModal: true });
+    this.setState({ awsConfigModal: true });
   };
 
   _closeModal = () => {
-    this.setState({ showModal: false });
+    this.setState({ awsConfigModal: false });
   };
 
   _resetConfig = () => {
@@ -98,7 +98,7 @@ class AWSPluginConfiguration extends React.Component {
   };
 
   render() {
-    const { config, update, showModal } = this.state;
+    const { config, update, awsConfigModal } = this.state;
     return (
       <div>
         <h3>AWS Plugin Configuration</h3>
@@ -149,7 +149,7 @@ class AWSPluginConfiguration extends React.Component {
           </Button>
         </IfPermitted>
 
-        <BootstrapModalForm show={showModal}
+        <BootstrapModalForm show={awsConfigModal}
                             title="Update AWS Plugin Configuration"
                             onSubmitForm={this._saveConfig}
                             onCancel={this._resetConfig}
