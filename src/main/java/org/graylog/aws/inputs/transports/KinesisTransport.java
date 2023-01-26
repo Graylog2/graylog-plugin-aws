@@ -189,7 +189,7 @@ public class KinesisTransport extends ThrottleableTransport {
                 configuration.getInt(CK_KINESIS_RECORD_BATCH_SIZE, DEFAULT_BATCH_SIZE)
         );
 
-        LOG.info("Starting Kinesis reader thread for input [{}/{}]", input.getName(), input.getId());
+        LOG.info("Starting Kinesis reader thread for input {}", input.toIdentifier());
         kinesisTaskFuture = executor.submit(this.reader);
     }
 
