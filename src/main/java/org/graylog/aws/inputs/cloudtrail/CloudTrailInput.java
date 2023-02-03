@@ -66,6 +66,11 @@ public class CloudTrailInput extends MessageInput {
         public Descriptor() {
             super(NAME, false, "");
         }
+
+        @Override
+        public boolean isCloudCompatible() {
+            return true;
+        }
     }
 
     @ConfigClass
