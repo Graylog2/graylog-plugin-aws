@@ -30,9 +30,17 @@ import org.graylog.aws.inputs.transports.KinesisTransport;
 import org.graylog.aws.migrations.V20200505121200_EncryptAWSSecretKey;
 import org.graylog.aws.processors.instancelookup.AWSInstanceNameLookupProcessor;
 import org.graylog.aws.processors.instancelookup.InstanceLookupTable;
+import org.graylog2.Configuration;
 import org.graylog2.plugin.PluginModule;
 
 public class AWSModule extends PluginModule {
+
+    private final Configuration configuration;
+
+    public AWSModule(Configuration configuration) {
+        this.configuration = configuration;
+    }
+
     @Override
     protected void configure() {
         // CloudTrail
@@ -40,21 +48,24 @@ public class AWSModule extends PluginModule {
         addTransport(CloudTrailTransport.NAME, CloudTrailTransport.class);
         addMessageInput(CloudTrailInput.class);
 
-        // CloudWatch
-        addCodec(CloudWatchFlowLogCodec.NAME, CloudWatchFlowLogCodec.class);
-        addCodec(CloudWatchRawLogCodec.NAME, CloudWatchRawLogCodec.class);
-        addTransport(KinesisTransport.NAME, KinesisTransport.class);
-        addMessageInput(FlowLogsInput.class);
-        addMessageInput(CloudWatchLogsInput.class);
-
-        // Instance name lookup
-        addMessageProcessor(AWSInstanceNameLookupProcessor.class, AWSInstanceNameLookupProcessor.Descriptor.class);
-
-        bind(InstanceLookupTable.class).asEagerSingleton();
         bind(ObjectMapper.class).annotatedWith(AWSObjectMapper.class).toInstance(createObjectMapper());
 
-        addMigration(V20200505121200_EncryptAWSSecretKey.class);
-        addRestResource(AWSConfigurationResource.class);
+        if (!configuration.isCloud()) {
+            // CloudWatch
+            addCodec(CloudWatchFlowLogCodec.NAME, CloudWatchFlowLogCodec.class);
+            addCodec(CloudWatchRawLogCodec.NAME, CloudWatchRawLogCodec.class);
+            addTransport(KinesisTransport.NAME, KinesisTransport.class);
+            addMessageInput(FlowLogsInput.class);
+            addMessageInput(CloudWatchLogsInput.class);
+
+            // Instance name lookup
+            addMessageProcessor(AWSInstanceNameLookupProcessor.class, AWSInstanceNameLookupProcessor.Descriptor.class);
+
+            bind(InstanceLookupTable.class).asEagerSingleton();
+
+            addMigration(V20200505121200_EncryptAWSSecretKey.class);
+            addRestResource(AWSConfigurationResource.class);
+        }
     }
 
     private ObjectMapper createObjectMapper() {
