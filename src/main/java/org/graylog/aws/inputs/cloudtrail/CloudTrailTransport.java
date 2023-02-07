@@ -180,6 +180,12 @@ public class CloudTrailTransport extends ThrottleableTransport {
 
     @ConfigClass
     public static class Config extends ThrottleableTransport.Config {
+        private final boolean isCloud;
+
+        @Inject
+        public Config(org.graylog2.Configuration configuration) {
+            isCloud = configuration.isCloud();
+        }
 
         @Override
         public ConfigurationRequest getRequestedConfiguration() {
@@ -217,16 +223,16 @@ public class CloudTrailTransport extends ThrottleableTransport {
                     "AWS access key",
                     "",
                     "Access key of an AWS user with sufficient permissions. (See documentation)",
-                    ConfigurationField.Optional.OPTIONAL
+                    isCloud ? ConfigurationField.Optional.NOT_OPTIONAL : ConfigurationField.Optional.OPTIONAL
             ));
             r.addField(new TextField(
                     CK_SECRET_KEY,
                     "AWS secret key",
                     "",
                     "Secret key of an AWS user with sufficient permissions. (See documentation)",
-                    ConfigurationField.Optional.OPTIONAL,
+                    isCloud ? ConfigurationField.Optional.NOT_OPTIONAL : ConfigurationField.Optional.OPTIONAL,
                     TextField.Attribute.IS_PASSWORD
-             ));
+            ));
 
             r.addField(new TextField(
                     CK_ASSUME_ROLE_ARN,
