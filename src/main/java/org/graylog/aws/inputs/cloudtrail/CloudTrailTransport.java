@@ -20,6 +20,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.codahale.metrics.MetricSet;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Iterables;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.assistedinject.Assisted;
@@ -44,6 +45,8 @@ import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.graylog2.plugin.inputs.transports.ThrottleableTransport;
 import org.graylog2.plugin.inputs.transports.Transport;
 import org.graylog2.plugin.lifecycles.Lifecycle;
+import org.graylog2.security.encryption.EncryptedValue;
+import org.graylog2.security.encryption.EncryptedValueService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +54,10 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public class CloudTrailTransport extends ThrottleableTransport {
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailTransport.class);
@@ -63,6 +69,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private static final String CK_SQS_NAME = "aws_sqs_queue_name";
     private static final String CK_ACCESS_KEY = "aws_access_key";
     private static final String CK_SECRET_KEY = "aws_secret_key";
+    private static final String CK_SECRET_KEY_ENCRYPTED = "aws_secret_key_encrypted";
     private static final String CK_ASSUME_ROLE_ARN = "aws_assume_role_arn";
 
     private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
@@ -73,6 +80,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private final org.graylog2.Configuration systemConfiguration;
     private final ClusterConfigService clusterConfigService;
     private final ObjectMapper objectMapper;
+    private final EncryptedValueService encryptedValueService;
 
     private CloudTrailSubscriber subscriber;
 
@@ -84,7 +92,8 @@ public class CloudTrailTransport extends ThrottleableTransport {
                                final ServerStatus serverStatus,
                                @AWSObjectMapper ObjectMapper objectMapper,
                                @Named("http_proxy_uri") @Nullable URI httpProxyUri,
-                               LocalMetricRegistry localRegistry) {
+                               LocalMetricRegistry localRegistry,
+                               EncryptedValueService encryptedValueService) {
         super(serverEventBus, configuration);
         this.systemConfiguration = systemConfiguration;
 
@@ -93,6 +102,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
         this.objectMapper = objectMapper;
         this.httpProxyUri = httpProxyUri;
         this.localRegistry = localRegistry;
+        this.encryptedValueService = encryptedValueService;
     }
 
     @Override
@@ -138,7 +148,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
                 systemConfiguration,
                 config,
                 input.getConfiguration().getString(CK_ACCESS_KEY),
-                input.getConfiguration().getString(CK_SECRET_KEY),
+                getSecretKey(input),
                 input.getConfiguration().getString(CK_AWS_SQS_REGION),
                 input.getConfiguration().getString(CK_ASSUME_ROLE_ARN)
         );
@@ -154,6 +164,21 @@ public class CloudTrailTransport extends ThrottleableTransport {
         );
 
         subscriber.start();
+    }
+
+    private String getSecretKey(MessageInput input) {
+        final String unencryptedKey = input.getConfiguration().getString(CK_SECRET_KEY, "");
+        final String encryptedKey = Objects.requireNonNullElse(encryptedValueService.decrypt(
+                input.getConfiguration().getEncryptedValue(CK_SECRET_KEY_ENCRYPTED, EncryptedValue.createUnset())), "");
+
+        final List<String> nonBlank = Stream.of(encryptedKey, unencryptedKey).filter(key -> !key.isBlank()).toList();
+
+        if (nonBlank.size() > 1) {
+            throw new IllegalArgumentException("Both \"AWS secret key (Deprecated)\" and \"AWS secret key (Encrypted)\"" +
+                    "are provided. Please only provide a value for \"AWS secret key (Encrypted)\".");
+        }
+
+        return Iterables.getFirst(nonBlank, "");
     }
 
     @Override
@@ -227,11 +252,19 @@ public class CloudTrailTransport extends ThrottleableTransport {
             ));
             r.addField(new TextField(
                     CK_SECRET_KEY,
-                    "AWS secret key",
+                    "AWS secret key (Deprecated)",
                     "",
-                    "Secret key of an AWS user with sufficient permissions. (See documentation)",
-                    isCloud ? ConfigurationField.Optional.NOT_OPTIONAL : ConfigurationField.Optional.OPTIONAL,
+                    "Deprecated. Please use \"AWS secret key (Encrypted)\" instead.",
+                    ConfigurationField.Optional.OPTIONAL,
                     TextField.Attribute.IS_PASSWORD
+            ));
+            r.addField(new TextField(
+                    CK_SECRET_KEY_ENCRYPTED,
+                    "AWS secret key (Encrypted)",
+                    "",
+                    "Secret key of an AWS user with sufficient permissions. (See documentation).",
+                    isCloud ? ConfigurationField.Optional.NOT_OPTIONAL : ConfigurationField.Optional.OPTIONAL,
+                    true
             ));
 
             r.addField(new TextField(
