@@ -28,6 +28,7 @@ import org.graylog.aws.AWS;
 import org.graylog.aws.AWSObjectMapper;
 import org.graylog.aws.auth.AWSAuthProvider;
 import org.graylog.aws.config.AWSPluginConfiguration;
+import org.graylog2.plugin.InputFailureRecorder;
 import org.graylog2.plugin.LocalMetricRegistry;
 import org.graylog2.plugin.ServerStatus;
 import org.graylog2.plugin.cluster.ClusterConfigService;
@@ -42,6 +43,7 @@ import org.graylog2.plugin.inputs.annotations.ConfigClass;
 import org.graylog2.plugin.inputs.annotations.FactoryClass;
 import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.graylog2.plugin.inputs.transports.ThrottleableTransport;
+import org.graylog2.plugin.inputs.transports.ThrottleableTransport2;
 import org.graylog2.plugin.inputs.transports.Transport;
 import org.graylog2.plugin.lifecycles.Lifecycle;
 import org.slf4j.Logger;
@@ -53,7 +55,7 @@ import javax.inject.Named;
 import java.net.URI;
 import java.util.Map;
 
-public class CloudTrailTransport extends ThrottleableTransport {
+public class CloudTrailTransport extends ThrottleableTransport2 {
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailTransport.class);
     public static final String NAME = "cloudtrail";
 
@@ -120,7 +122,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     }
 
     @Override
-    public void doLaunch(MessageInput input) throws MisfireException {
+    public void doLaunch(MessageInput input, InputFailureRecorder inputFailureRecorder) throws MisfireException {
         serverStatus.awaitRunning(() -> lifecycleStateChange(Lifecycle.RUNNING));
 
         final AWSPluginConfiguration config = clusterConfigService.getOrDefault(AWSPluginConfiguration.class,
@@ -150,8 +152,8 @@ public class CloudTrailTransport extends ThrottleableTransport {
                 input,
                 authProvider,
                 proxyUrl,
-                objectMapper
-        );
+                objectMapper,
+                inputFailureRecorder);
 
         subscriber.start();
     }
