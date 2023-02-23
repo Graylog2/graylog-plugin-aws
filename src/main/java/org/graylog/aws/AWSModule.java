@@ -22,11 +22,6 @@ import org.graylog.aws.config.AWSConfigurationResource;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailCodec;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailInput;
 import org.graylog.aws.inputs.cloudtrail.CloudTrailTransport;
-import org.graylog.aws.inputs.cloudwatch.CloudWatchLogsInput;
-import org.graylog.aws.inputs.codecs.CloudWatchFlowLogCodec;
-import org.graylog.aws.inputs.codecs.CloudWatchRawLogCodec;
-import org.graylog.aws.inputs.flowlogs.FlowLogsInput;
-import org.graylog.aws.inputs.transports.KinesisTransport;
 import org.graylog.aws.migrations.V20200505121200_EncryptAWSSecretKey;
 import org.graylog.aws.processors.instancelookup.AWSInstanceNameLookupProcessor;
 import org.graylog.aws.processors.instancelookup.InstanceLookupTable;
@@ -51,13 +46,6 @@ public class AWSModule extends PluginModule {
         bind(ObjectMapper.class).annotatedWith(AWSObjectMapper.class).toInstance(createObjectMapper());
 
         if (!configuration.isCloud()) {
-            // CloudWatch
-            addCodec(CloudWatchFlowLogCodec.NAME, CloudWatchFlowLogCodec.class);
-            addCodec(CloudWatchRawLogCodec.NAME, CloudWatchRawLogCodec.class);
-            addTransport(KinesisTransport.NAME, KinesisTransport.class);
-            addMessageInput(FlowLogsInput.class);
-            addMessageInput(CloudWatchLogsInput.class);
-
             // Instance name lookup
             addMessageProcessor(AWSInstanceNameLookupProcessor.class, AWSInstanceNameLookupProcessor.Descriptor.class);
 
