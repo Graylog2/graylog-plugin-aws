@@ -45,7 +45,7 @@ public class AWSModule extends PluginModule {
 
         bind(ObjectMapper.class).annotatedWith(AWSObjectMapper.class).toInstance(createObjectMapper());
 
-        if (!configuration.isCloud()) {
+        if (!(configuration.isCloud() || isForwarder())) {
             // Instance name lookup
             addMessageProcessor(AWSInstanceNameLookupProcessor.class, AWSInstanceNameLookupProcessor.Descriptor.class);
 
@@ -59,5 +59,16 @@ public class AWSModule extends PluginModule {
     private ObjectMapper createObjectMapper() {
         return new ObjectMapper()
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
+
+    /**
+     * @return A boolean indicating if the plugin is being loaded within the Graylog Forwarder.
+     * The graylog.forwarder system property is set in the startup sequence of the Graylog Cloud Forwarder.
+     * <p>
+     * The Cloud Forwarder only supports inputs. This allows other bindings to be skipped when this plugin is
+     * loaded within the Cloud Forwarder.
+     */
+    boolean isForwarder() {
+        return Boolean.parseBoolean(System.getProperty("graylog.forwarder"));
     }
 }
