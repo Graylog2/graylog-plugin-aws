@@ -1,0 +1,5 @@
+type = "changed" # One of: a(dded), c(hanged), d(eprecated), r(emoved), f(ixed), s(ecurity)
+message = "Consistent use of message identifiers in strings."
+
+issues = ["Graylog2/graylog2-server#13628"]
+pulls = ["673"]
