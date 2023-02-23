@@ -27,6 +27,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 import org.graylog.aws.config.AWSPluginConfiguration;
 import org.graylog2.Configuration;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class AWSAuthProvider implements AWSCredentialsProvider {
     private static final Logger LOG = LoggerFactory.getLogger(AWSAuthProvider.class);
     private final Configuration configuration;
 
-    private AWSCredentialsProvider credentials;
+    private final AWSCredentialsProvider credentials;
 
     public AWSAuthProvider(Configuration configuration, AWSPluginConfiguration awsConfig) {
         this(configuration, awsConfig, null, null, null, null);
@@ -90,8 +91,8 @@ public class AWSAuthProvider implements AWSCredentialsProvider {
     }
 
     private AWSCredentialsProvider getCloudAwsCredentialsProvider(String accessKey, String secretKey) {
-        Preconditions.checkArgument(!(accessKey == null || accessKey.isBlank()), "Access key is required.");
-        Preconditions.checkArgument(!(secretKey == null || secretKey.isBlank()), "Secret key is required.");
+        Preconditions.checkArgument(StringUtils.isNotBlank(accessKey), "Access key is required.");
+        Preconditions.checkArgument(StringUtils.isNotBlank(secretKey), "Secret key is required.");
         return new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
     }
 
