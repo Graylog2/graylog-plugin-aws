@@ -1,0 +1,4 @@
+type = "removed"
+message = "Remove deprecated inputs \"AWS Logs (deprecated)\" and \"AWS Flow Logs (deprecated)\"."
+
+pulls = ["674"]

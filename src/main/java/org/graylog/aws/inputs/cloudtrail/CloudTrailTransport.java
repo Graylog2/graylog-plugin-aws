@@ -44,6 +44,7 @@ import org.graylog2.plugin.inputs.codecs.CodecAggregator;
 import org.graylog2.plugin.inputs.transports.ThrottleableTransport;
 import org.graylog2.plugin.inputs.transports.Transport;
 import org.graylog2.plugin.lifecycles.Lifecycle;
+import org.graylog2.security.encryption.EncryptedValueService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +74,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
     private final org.graylog2.Configuration systemConfiguration;
     private final ClusterConfigService clusterConfigService;
     private final ObjectMapper objectMapper;
+    private final EncryptedValueService encryptedValueService;
 
     private CloudTrailSubscriber subscriber;
 
@@ -84,7 +86,8 @@ public class CloudTrailTransport extends ThrottleableTransport {
                                final ServerStatus serverStatus,
                                @AWSObjectMapper ObjectMapper objectMapper,
                                @Named("http_proxy_uri") @Nullable URI httpProxyUri,
-                               LocalMetricRegistry localRegistry) {
+                               LocalMetricRegistry localRegistry,
+                               EncryptedValueService encryptedValueService) {
         super(serverEventBus, configuration);
         this.systemConfiguration = systemConfiguration;
 
@@ -93,6 +96,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
         this.objectMapper = objectMapper;
         this.httpProxyUri = httpProxyUri;
         this.localRegistry = localRegistry;
+        this.encryptedValueService = encryptedValueService;
     }
 
     @Override
@@ -138,7 +142,7 @@ public class CloudTrailTransport extends ThrottleableTransport {
                 systemConfiguration,
                 config,
                 input.getConfiguration().getString(CK_ACCESS_KEY),
-                input.getConfiguration().getString(CK_SECRET_KEY),
+                encryptedValueService.decrypt(input.getConfiguration().getEncryptedValue(CK_SECRET_KEY)),
                 input.getConfiguration().getString(CK_AWS_SQS_REGION),
                 input.getConfiguration().getString(CK_ASSUME_ROLE_ARN)
         );
@@ -180,6 +184,12 @@ public class CloudTrailTransport extends ThrottleableTransport {
 
     @ConfigClass
     public static class Config extends ThrottleableTransport.Config {
+        private final boolean isCloud;
+
+        @Inject
+        public Config(org.graylog2.Configuration configuration) {
+            isCloud = configuration.isCloud();
+        }
 
         @Override
         public ConfigurationRequest getRequestedConfiguration() {
@@ -217,16 +227,16 @@ public class CloudTrailTransport extends ThrottleableTransport {
                     "AWS access key",
                     "",
                     "Access key of an AWS user with sufficient permissions. (See documentation)",
-                    ConfigurationField.Optional.OPTIONAL
+                    isCloud ? ConfigurationField.Optional.NOT_OPTIONAL : ConfigurationField.Optional.OPTIONAL
             ));
             r.addField(new TextField(
                     CK_SECRET_KEY,
                     "AWS secret key",
                     "",
                     "Secret key of an AWS user with sufficient permissions. (See documentation)",
-                    ConfigurationField.Optional.OPTIONAL,
+                    isCloud ? ConfigurationField.Optional.NOT_OPTIONAL : ConfigurationField.Optional.OPTIONAL, true,
                     TextField.Attribute.IS_PASSWORD
-             ));
+            ));
 
             r.addField(new TextField(
                     CK_ASSUME_ROLE_ARN,
