@@ -23,6 +23,7 @@ import com.graylog2.input.cloudtrail.json.CloudTrailResponseElements;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
 public class CloudTrailRecord implements Serializable {
     @JsonProperty("eventVersion")
@@ -59,7 +60,7 @@ public class CloudTrailRecord implements Serializable {
     @JsonProperty("additionalEventData")
     public Map<String, Object> additionalEventData;
 
-    //adding errorMessage 
+    //adding errorMessage
     @JsonProperty("errorMessage")
     public String errorMessage;
 
@@ -110,7 +111,8 @@ public class CloudTrailRecord implements Serializable {
     }
 
     public String getConstructedMessage() {
-        return eventSource + ":" + eventName + " in " + awsRegion + " by " + sourceIPAddress + " / " + userIdentity.userName;
+        return eventSource + ":" + eventName + " in " + awsRegion + " by " + sourceIPAddress + " / " +
+                Optional.ofNullable(userIdentity).map(i -> i.userName).orElse("<unknown user_name>");
     }
 
 }
