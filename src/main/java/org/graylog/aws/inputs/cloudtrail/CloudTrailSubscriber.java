@@ -110,10 +110,10 @@ public class CloudTrailSubscriber extends Thread {
                 try {
                     notifications = subscriber.getNotifications();
                 } catch (Exception e) {
-                    inputFailureRecorder.isFailing(getClass(), "Could not read messages from SQS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
+                    inputFailureRecorder.setFailing(getClass(), "Could not read messages from SQS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
                     break;
                 }
-                inputFailureRecorder.isRunning();
+                inputFailureRecorder.setRunning();
                 LOG.debug("Subscriber returned [{}] notifications.", notifications.size());
 
                 /*
@@ -166,9 +166,9 @@ public class CloudTrailSubscriber extends Thread {
 
                         // All messages written. Ack notification.
                         subscriber.deleteNotification(n);
-                        inputFailureRecorder.isRunning();
+                        inputFailureRecorder.setRunning();
                     } catch (Exception e) {
-                        inputFailureRecorder.isFailing(this.getClass(), f("Could not read CloudTrail log file for <%s>. Skipping.", n.getS3Bucket()), e);
+                        inputFailureRecorder.setFailing(this.getClass(), f("Could not read CloudTrail log file for <%s>. Skipping.", n.getS3Bucket()), e);
                     }
                 }
             }
