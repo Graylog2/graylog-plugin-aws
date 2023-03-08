@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.graylog2.shared.utilities.StringUtils.f;
+
 public class CloudTrailSubscriber extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailSubscriber.class);
 
@@ -160,13 +162,13 @@ public class CloudTrailSubscriber extends Thread {
                             }
 
                             sourceInput.processRawMessage(new RawMessage(objectMapper.writeValueAsBytes(record)));
-                            sourceInput.stop();
                         }
 
                         // All messages written. Ack notification.
                         subscriber.deleteNotification(n);
+                        inputFailureRecorder.isRunning();
                     } catch (Exception e) {
-                        LOG.error("Could not read CloudTrail log file for <{}>. Skipping.", n.getS3Bucket(), e);
+                        inputFailureRecorder.isFailing(this.getClass(), f("Could not read CloudTrail log file for <%s>. Skipping.", n.getS3Bucket()), e);
                     }
                 }
             }
