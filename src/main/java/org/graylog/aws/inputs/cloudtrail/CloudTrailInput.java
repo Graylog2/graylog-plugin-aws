@@ -71,6 +71,11 @@ public class CloudTrailInput extends MessageInput {
         public boolean isCloudCompatible() {
             return true;
         }
+
+        @Override
+        public boolean isForwarderCompatible() {
+            return false;
+        }
     }
 
     @ConfigClass
