@@ -113,7 +113,6 @@ public class CloudTrailSubscriber extends Thread {
                     inputFailureRecorder.setFailing(getClass(), "Could not read messages from SQS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
                     break;
                 }
-                inputFailureRecorder.setRunning();
                 LOG.debug("Subscriber returned [{}] notifications.", notifications.size());
 
                 /*
