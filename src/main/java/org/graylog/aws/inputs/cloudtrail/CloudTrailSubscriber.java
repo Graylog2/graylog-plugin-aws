@@ -26,6 +26,7 @@ import org.graylog.aws.inputs.cloudtrail.messages.TreeReader;
 import org.graylog.aws.inputs.cloudtrail.notifications.CloudtrailSNSNotification;
 import org.graylog.aws.inputs.cloudtrail.notifications.CloudtrailSQSClient;
 import org.graylog.aws.s3.S3Reader;
+import org.graylog2.plugin.InputFailureRecorder;
 import org.graylog2.plugin.inputs.MessageInput;
 import org.graylog2.plugin.journal.RawMessage;
 import org.slf4j.Logger;
@@ -34,6 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static org.graylog2.shared.utilities.StringUtils.f;
 
 public class CloudTrailSubscriber extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(CloudTrailSubscriber.class);
@@ -52,9 +55,11 @@ public class CloudTrailSubscriber extends Thread {
     private final AWSAuthProvider authProvider;
     private final HttpUrl proxyUrl;
     private final ObjectMapper objectMapper;
+    private final InputFailureRecorder inputFailureRecorder;
 
     public CloudTrailSubscriber(Region sqsRegion, Region s3Region, String queueName, MessageInput sourceInput,
-                                AWSAuthProvider authProvider, HttpUrl proxyUrl, ObjectMapper objectMapper) {
+                                AWSAuthProvider authProvider, HttpUrl proxyUrl, ObjectMapper objectMapper,
+                                InputFailureRecorder inputFailureRecorder) {
         this.sqsRegion = sqsRegion;
         this.s3Region = s3Region;
         this.queueName = queueName;
@@ -62,6 +67,7 @@ public class CloudTrailSubscriber extends Thread {
         this.sourceInput = sourceInput;
         this.proxyUrl = proxyUrl;
         this.objectMapper = objectMapper;
+        this.inputFailureRecorder = inputFailureRecorder;
     }
 
     public void pause() {
@@ -104,7 +110,7 @@ public class CloudTrailSubscriber extends Thread {
                 try {
                     notifications = subscriber.getNotifications();
                 } catch (Exception e) {
-                    LOG.error("Could not read messages from SQS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
+                    inputFailureRecorder.setFailing(getClass(), "Could not read messages from SQS. This is most likely a misconfiguration of the plugin. Going into sleep loop and retrying.", e);
                     break;
                 }
                 LOG.debug("Subscriber returned [{}] notifications.", notifications.size());
@@ -159,8 +165,9 @@ public class CloudTrailSubscriber extends Thread {
 
                         // All messages written. Ack notification.
                         subscriber.deleteNotification(n);
+                        inputFailureRecorder.setRunning();
                     } catch (Exception e) {
-                        LOG.error("Could not read CloudTrail log file for <{}>. Skipping.", n.getS3Bucket(), e);
+                        inputFailureRecorder.setFailing(this.getClass(), f("Could not read CloudTrail log file for <%s>. Skipping.", n.getS3Bucket()), e);
                     }
                 }
             }
