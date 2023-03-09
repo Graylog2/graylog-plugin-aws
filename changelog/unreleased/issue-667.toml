@@ -1,0 +1,5 @@
+type = "fixed"
+message = "Fix JSON deserialization errors in AWS CloudTrail input."
+
+issues = ["667"]
+pulls = ["677"]

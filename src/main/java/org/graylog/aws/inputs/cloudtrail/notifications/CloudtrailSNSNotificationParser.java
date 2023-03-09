@@ -29,8 +29,11 @@ import java.util.Collections;
 import java.util.List;
 
 public class CloudtrailSNSNotificationParser {
-    private final ObjectMapper objectMapper;
+
+    private static final String CLOUD_TRAIL_VALIDATION_MESSAGE = "CloudTrail validation message.";
     private static final Logger LOG = LoggerFactory.getLogger(CloudtrailSNSNotificationParser.class);
+
+    private final ObjectMapper objectMapper;
 
     public CloudtrailSNSNotificationParser(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -49,6 +52,10 @@ public class CloudtrailSNSNotificationParser {
             }
 
             LOG.debug("Reading message envelope {}.", envelope.message);
+            if (envelope.message.contains(CLOUD_TRAIL_VALIDATION_MESSAGE)) {
+                return Collections.emptyList();
+            }
+
             final CloudtrailWriteNotification notification = objectMapper.readValue(envelope.message, CloudtrailWriteNotification.class);
 
             final List<String> s3ObjectKeys = notification.s3ObjectKey;
