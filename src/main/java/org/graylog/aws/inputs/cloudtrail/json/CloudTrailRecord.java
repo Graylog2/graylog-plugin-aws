@@ -64,6 +64,9 @@ public class CloudTrailRecord implements Serializable {
     @JsonProperty("errorMessage")
     public String errorMessage;
 
+    @JsonProperty("errorCode")
+    public String errorCode;
+
     @JsonProperty("requestParameters")
     public Map<String, Object> requestParameters;
 
@@ -87,6 +90,10 @@ public class CloudTrailRecord implements Serializable {
         //adding errorMessage if present
         if (errorMessage != null) {
             m.put("errorMessage", errorMessage);
+        }
+
+        if (errorCode != null) {
+          m.put("errorCode", errorCode);
         }
 
         if (userIdentity != null) {
