@@ -26,12 +26,12 @@
     <parent>
         <groupId>org.graylog.plugins</groupId>
         <artifactId>graylog-plugin-web-parent</artifactId>
-        <version>5.1.2</version>
+        <version>5.1.3-SNAPSHOT</version>
         <relativePath>../graylog2-server/graylog-plugin-parent/graylog-plugin-web-parent</relativePath>
     </parent>
 
     <artifactId>graylog-plugin-aws</artifactId>
-    <version>5.1.2</version>
+    <version>5.1.3-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -51,7 +51,7 @@
         <maven.install.skip>true</maven.install.skip>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.site.skip>true</maven.site.skip>
-        <graylog.version>5.1.2</graylog.version>
+        <graylog.version>5.1.3-SNAPSHOT</graylog.version>
         <aws-java-sdk.version>1.12.412</aws-java-sdk.version>
     </properties>
 
